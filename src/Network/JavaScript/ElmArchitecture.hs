@@ -21,9 +21,7 @@ import qualified Data.Aeson as A
 import Control.Monad.Trans.State   (State,put,get,runState,evalState,execState)
 import Control.Monad.Trans.Writer  (Writer,runWriter,tell, mapWriter)
 
-import Network.JavaScript.Reactive (Event, popE)
-import Network.JavaScript.Internal (AF(..),evalAF)
-import Network.JavaScript          (sendA, command, call, value, start, Application)
+import Network.JavaScript          (sendA, command, call, value, start, Application, listen)
 import Data.Text(Text)
 
 class Widget model msg where
@@ -42,7 +40,7 @@ updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws
 
 -- An Applet take a model, and return a model, perhaps using
 -- IO to generate a event that itself returns Applets.
-newtype Applet model = Applet (Writer (IO (Event (model -> Applet model))) model)
+-- newtype Applet model = Applet (Writer (IO (Event (model -> Applet model))) model)
 
 
 -- | A 'Remote' functor that returns a message.
@@ -186,7 +184,6 @@ instance FromJSON WebEvent where
 ------------------------------------------------------------------------------
 data RuntimeState model = RuntimeState
   { theModel :: model
-  , theMsgs  :: Event Value
   , theTick  :: Int
   }
 
@@ -194,7 +191,7 @@ elmArchitecture :: forall model .
                    (Show model, Widget model model)
                 => model
                 -> Application -> Application
-elmArchitecture  m = start $ \ ev e -> do
+elmArchitecture  m = start $ \ e -> do
   print "elmArch"
   let render :: RuntimeState model
              -> IO ()
@@ -211,26 +208,24 @@ elmArchitecture  m = start $ \ ev e -> do
            -> Remote model
 	   -> IO ()
       wait state@RuntimeState{..} theView = do
-        (msg,theMsgs') <- popE theMsgs
+        msg <- listen e
         print "waiting for event"
         print msg
         case fromJSON msg :: Result WebEvent of
           Error msg -> do
             print("Error fromJSON msg",msg)
-            wait state{theMsgs=theMsgs'} theView
+            wait state theView
           Success msg' -> do
             print ("got msg",msg')
             case evalState (recvRemote theView msg') 0 of
               Nothing -> do
                 print "no match found for event"
-                wait state{theMsgs=theMsgs'} theView
+                wait state theView
               Just theModel' -> 
                 render $ RuntimeState { theModel = theModel'
-                                      , theMsgs = theMsgs'
                                       , theTick = theTick + 1
                                       }
   render $ RuntimeState { theModel = m
-                        , theMsgs = ev
                         , theTick = 0
                         }
 
