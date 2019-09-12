@@ -28,6 +28,7 @@ source-repository head
 
 library
   exposed-modules:     Network.JavaScript.ElmArchitecture,
+                       Network.JavaScript.Remote,
                        Network.JavaScript.Widgets
   -- other-modules:
   -- other-extensions:

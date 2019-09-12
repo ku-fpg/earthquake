@@ -12,18 +12,22 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Network.JavaScript.ElmArchitecture where
+module Network.JavaScript.ElmArchitecture (
+  module Network.JavaScript.ElmArchitecture,
+  module Network.JavaScript.Remote) where
 
+import Control.Monad.Trans.State   (State,put,get,runState,evalState,execState)
 import Control.Applicative         ((<|>))
 import Data.Aeson                  (Value,ToJSON,toJSON,FromJSON(..),withObject,(.:), Result(..),fromJSON,(.=))
 import Data.Maybe
 import qualified Data.Aeson as A
-import Control.Monad.Trans.State   (State,put,get,runState,evalState,execState)
+
 import Control.Monad.Trans.Writer  (Writer,runWriter,tell, mapWriter)
 
 import Network.JavaScript          (sendA, command, call, value, start, Application, listen)
 import Data.Text(Text)
 
+import Network.JavaScript.Remote
 
 -- a widget is a combination of a model transformer, with a Remote (view) effect.
 class Widget model where
@@ -44,54 +48,6 @@ updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws
 -- IO to generate a event that itself returns Applets.
 -- newtype Applet model = Applet (Writer (IO (Event (model -> Applet model))) model)
 
-
--- | A 'Remote' functor that returns a message.
-data Remote msg where
-  Send       :: ToJSON a => a -> Remote msg
-  RecvUnit   :: Remote ()
-  RecvDouble :: Remote Double
-  RecvText   :: Remote Text
-  RecvBool   :: Remote Bool
-  MapRemote  :: (a -> b) -> Remote a -> Remote b
-  Object     :: [Pair msg] -> Remote msg
-  Array      :: [Remote msg] -> Remote msg  
-
-instance Functor Remote where
-  fmap = MapRemote
-
-send :: ToJSON a => a -> Remote msg
-send = Send
-
-class Recv msg where
-  recv :: Remote msg
-
-instance Recv () where
-  recv = RecvUnit
-
-instance Recv Double where
-  recv = RecvDouble
-
-instance Recv Text where
-  recv = RecvText
-
-instance Recv Bool where
-  recv = RecvBool
-
-data Pair msg where
-  (:=) :: Text -> Remote msg -> Pair msg
-
--- same as ($)
-infixr 0 :=
-
-object :: [Pair msg] -> Remote msg
-object = Object
-
-array :: [Remote msg] -> Remote msg
-array = Array
-
-wait :: a -> Remote a
-wait a = fmap (\ () -> a) recv
-
 data OneOf a = OneOf Int a
   deriving Show
 
@@ -101,87 +57,11 @@ arrayOf rs = array
   | (r,i) <- rs `zip` [0..]
   ]
 
-sendRemote :: Remote msg -> State Int Value
-sendRemote (Send a) = pure $ toJSON a
-sendRemote (RecvUnit) = toJSON <$> alloc 
-sendRemote (RecvDouble) = toJSON <$> alloc
-sendRemote (RecvText) = toJSON <$> alloc
-sendRemote (RecvBool) = toJSON <$> alloc
-sendRemote (MapRemote _ r) = sendRemote r
-sendRemote (Object pairs) = A.object <$> sequenceA
-  [ (lbl .=) <$> sendRemote r
-  | lbl := r <- pairs
-  ]
-sendRemote (Array rs) = toJSON <$> sequenceA (sendRemote <$> rs)
 
-recvRemote :: Remote msg -> WebEvent -> State Int (Maybe msg)
-recvRemote (RecvUnit) we = do
-  i <- alloc
-  case we of
-    Click i' | i == i' -> pure (Just ())
-    _ -> pure Nothing
-recvRemote (RecvDouble) we = do
-  i <- alloc
-  case we of
-    Slide i' v | i == i' -> pure (Just v)
-    _ -> pure Nothing
-recvRemote (RecvText) we = do
-  i <- alloc
-  case we of
-    Entry i' v | i == i' -> pure (Just v)
-    _ -> pure Nothing
-recvRemote (RecvBool) we = do
-  i <- alloc
-  case we of
-    Toggle i' v | i == i' -> pure (Just v)
-    _ -> pure Nothing
-recvRemote (Send {}) _ = pure Nothing
-recvRemote (Object pairs) we = f <$> sequenceA
-    [ recvRemote r we
-    | _ := r <- pairs
-    ]
-  where
-    f xs = head $ filter isJust xs ++ [Nothing]
-recvRemote (Array rs) we = f <$> sequenceA
-    [ recvRemote r we
-    | r <- rs
-    ]
-  where
-    f xs = head $ filter isJust xs ++ [Nothing]
-recvRemote (MapRemote f r) ev = fmap f <$> recvRemote r ev
 
-alloc :: State Int Int
-alloc = do
-  s <- get
-  put (succ s)
-  return s
 
 ------------------------------------------------------------------------------
 
-data WebEvent
-  = Click Int
-  | Slide Int Double
-  | Entry Int Text
-  | Toggle Int Bool
-  deriving Show
-
-instance FromJSON WebEvent where
-  parseJSON o = parseClick o <|>
-                parseSlide o <|>
-                parseEntry o <|>
-                parseToggle o
-   where
-     parseClick = withObject "Click" $ \v -> Click
-        <$> v .: "click"
-     parseSlide = withObject "Slide" $ \v -> Slide
-        <$> v .: "slide"
-        <*> v .: "value"
-     parseEntry = withObject "Entry" $ \v -> Entry
-        <$> v .: "entry"
-        <*> v .: "value"
-     parseToggle = withObject "Toggle" $ \v -> Toggle
-        <$> v .: "entry"
-        <*> v .: "value"
 
 ------------------------------------------------------------------------------
 data RuntimeState model = RuntimeState
@@ -213,7 +93,7 @@ elmArchitecture  m = start $ \ e -> do
         msg <- listen e
         print "waiting for event"
         print msg
-        case fromJSON msg :: Result WebEvent of
+        case fromJSON msg :: Result ResponseEvent of
           Error msg -> do
             print("Error fromJSON msg",msg)
             wait state theView
@@ -238,11 +118,11 @@ elmArchitecture  m = start $ \ e -> do
 tag :: Text -> Remote msg
 tag txt = send txt
 
-primitive :: (ToJSON m, Recv m) => Text -> m -> Remote m
+primitive :: (ToJSON m, ToResponse m) => Text -> m -> Remote m
 primitive txt n = object 
-      [ "type"   := tag txt  -- by convension
-      , "value"  := send n   -- the outgoing value
-      , "event"  := recv     -- the event reply
+      [ ("type"  , tag txt)  -- by convension
+      , ("value" , send n)   -- the outgoing value
+      , ("event" , recv)     -- the event reply
       ]  
 
 instance Widget Double where
