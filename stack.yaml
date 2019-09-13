@@ -37,14 +37,11 @@ resolver: lts-13.6
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - '.'
-- location:
-    git: 'git@github.com:ku-fpg/javascript-bridge'
-    commit: 'c22552cc8adbc547ec40b1576d58069d23c1996c'
-  extra-dep: true
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps:
+- javascript-bridge-0.2.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
