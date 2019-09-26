@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -w #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -25,28 +26,46 @@ import qualified Data.Aeson as A
 import Control.Monad.Trans.Writer  (Writer,runWriter,tell, mapWriter)
 
 import Network.JavaScript          (sendA, command, call, value, start, Application, listen)
-import Data.Text(Text)
+import Data.Text(Text, pack)
 
 import Network.JavaScript.Remote
 
--- a widget is a combination of a model transformer, with a Remote (view) effect.
-class Widget model where
-  widget :: model -> Remote model
+data Cmd model where
+  Promise :: IO (Msg model) -> Cmd model
+  Ticker :: Int -> IO (Msg model) -> Cmd model
+  MconcatCmd :: [Cmd model] -> Cmd model
+  FmapCmd :: (a -> b) -> Cmd a -> Cmd b
 
--- We provide the more general tag-based message, as well as the
--- more uniform model to model version.
-widgetOneOf :: Widget model => [model] -> Remote (OneOf model)
-widgetOneOf = arrayOf . map widget
+instance Functor Cmd where 
+  fmap = FmapCmd
+
+instance Semigroup (Cmd msg) where 
+  (<>) = mappend
+
+instance Monoid (Cmd msg) where 
+  mempty = mconcat []
+  mappend a b = mconcat [a,b]
+  mconcat = MconcatCmd
+
+class Widget model where
+  type Msg model
+  view :: (msg ~ Msg model) => model -> Remote msg
+  update :: (msg ~ Msg model) => msg -> model -> (Cmd msg,model)
+--  update :: (msg ~ Msg model) => (Msg model) -> model -> (Cmd (Msg model),model)
+  default update :: (msg ~ model, msg ~ Msg model) => msg -> model -> (Cmd msg,model)
+  -- We default to the message being the new model.
+  update msg _ = pure msg
+
+-- can use pure for update, which is nice
 
 instance Widget model => Widget [model] where
-  widget ws = flip updateOneOf ws <$> widgetOneOf ws
+  type Msg [model] = OneOf (Msg model)
+  view = arrayOf . map view
+  update (OneOf n w) xs = (OneOf n <$> c, take n xs ++ [x] ++ drop (n+1) xs)
+    where (c,x) = update w (xs !! n)
 
 updateOneOf :: OneOf model -> [model] -> [model]
 updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws
-
--- An Applet take a model, and return a model, perhaps using
--- IO to generate a event that itself returns Applets.
--- newtype Applet model = Applet (Writer (IO (Event (model -> Applet model))) model)
 
 data OneOf a = OneOf Int a
   deriving Show
@@ -56,12 +75,6 @@ arrayOf rs = array
   [ OneOf i <$> r
   | (r,i) <- rs `zip` [0..]
   ]
-
-
-
-
-------------------------------------------------------------------------------
-
 
 ------------------------------------------------------------------------------
 data RuntimeState model = RuntimeState
@@ -79,7 +92,7 @@ elmArchitecture  m = start $ \ e -> do
              -> IO ()
       render state@RuntimeState{..} = do
         print theModel
-        let theView = widget @model theModel
+        let theView = view @model theModel
         let s0 = 0
         let (json,_) = runState (sendRemote theView) 0
         print ("json",json)
@@ -87,9 +100,9 @@ elmArchitecture  m = start $ \ e -> do
         wait state theView
 
       wait :: RuntimeState model
-           -> Remote model
+           -> Remote (Msg model)
 	   -> IO ()
-      wait state@RuntimeState{..} theView = do
+      wait state@RuntimeState{..} theView = do 
         msg <- listen e
         print "waiting for event"
         print msg
@@ -103,7 +116,8 @@ elmArchitecture  m = start $ \ e -> do
               Nothing -> do
                 print "no match found for event"
                 wait state theView
-              Just theModel' -> 
+              Just theMsg -> 
+	        let (_,theModel') = update theMsg theModel in
                 render $ RuntimeState { theModel = theModel'
                                       , theTick = theTick + 1
                                       }
@@ -115,23 +129,35 @@ elmArchitecture  m = start $ \ e -> do
 ------------------------------------------------------------------------------
 -- Primitive widgets
 
-tag :: Text -> Remote msg
-tag txt = send txt
+tag :: String -> Remote msg
+tag = send . pack
 
-primitive :: (ToJSON m, ToResponse m) => Text -> m -> Remote m
+primitive :: (ToJSON m, ToResponse m) => String -> m -> Remote m
 primitive txt n = object 
-      [ ("type"  , tag txt)  -- by convension
+      [ ("type"  , tag txt)  -- type gives the type name
       , ("value" , send n)   -- the outgoing value
       , ("event" , recv)     -- the event reply
       ]  
 
+
+-- Here are the base instances. 
+-- We do not default view to this pattern, 
+-- because it would complicate the API for Widget to save 4 lines of 
+-- (internal) code.
+
 instance Widget Double where
-  widget = primitive "Double"
+  type Msg Double = Double
+  view = primitive $ show $ witness @Double
 
 instance Widget Text where
-  widget = primitive "Text"
+  type Msg Text = Text
+  view = primitive $ show $ witness @Text
 
 instance Widget Bool where
-  widget = primitive "Bool"  
+  type Msg Bool = Bool
+  view = primitive $ show $ witness @Bool
 
+instance Widget () where
+  type Msg () = ()
+  view = primitive $ show $ witness @()
 

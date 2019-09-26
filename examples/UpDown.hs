@@ -18,7 +18,8 @@ newtype Counter = Counter Int
   deriving (Eq, Ord, Enum, Num, Show)
 
 instance Widget Counter where
-  widget (Counter n) = object 
+  type Msg Counter = Counter
+  view (Counter n) = object 
         [ ("down" , wait $ Counter (n-1))
         , ("text" , send (show n))
         , ("up"   , wait $ Counter (n+1))
