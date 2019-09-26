@@ -10,6 +10,7 @@ module Main where
 import Web.Scotty
 
 import Network.JavaScript.ElmArchitecture
+import Network.Earthquake.Widget
 
 import Paths_earthquake
 

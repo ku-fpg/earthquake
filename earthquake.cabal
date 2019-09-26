@@ -30,6 +30,7 @@ library
   exposed-modules:     Network.JavaScript.ElmArchitecture,
                        Network.Earthquake.Cmd,
                        Network.Earthquake.Remote,
+                       Network.Earthquake.Widget,
                        Network.JavaScript.Widgets
   -- other-modules:
   -- other-extensions:

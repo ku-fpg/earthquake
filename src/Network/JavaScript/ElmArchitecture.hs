@@ -29,52 +29,9 @@ import Network.JavaScript          (sendA, command, call, value, start, Applicat
 import Data.Text(Text, pack)
 
 import Network.Earthquake.Remote
+import Network.Earthquake.Cmd
+import Network.Earthquake.Widget
 
-data Cmd model where
-  Promise :: IO (Msg model) -> Cmd model
-  Ticker :: Int -> IO (Msg model) -> Cmd model
-  MconcatCmd :: [Cmd model] -> Cmd model
-  FmapCmd :: (a -> b) -> Cmd a -> Cmd b
-
-instance Functor Cmd where 
-  fmap = FmapCmd
-
-instance Semigroup (Cmd msg) where 
-  (<>) = mappend
-
-instance Monoid (Cmd msg) where 
-  mempty = mconcat []
-  mappend a b = mconcat [a,b]
-  mconcat = MconcatCmd
-
-class Widget model where
-  type Msg model
-  view :: (msg ~ Msg model) => model -> Remote msg
-  update :: (msg ~ Msg model) => msg -> model -> (Cmd msg,model)
---  update :: (msg ~ Msg model) => (Msg model) -> model -> (Cmd (Msg model),model)
-  default update :: (msg ~ model, msg ~ Msg model) => msg -> model -> (Cmd msg,model)
-  -- We default to the message being the new model.
-  update msg _ = pure msg
-
--- can use pure for update, which is nice
-
-instance Widget model => Widget [model] where
-  type Msg [model] = OneOf (Msg model)
-  view = arrayOf . map view
-  update (OneOf n w) xs = (OneOf n <$> c, take n xs ++ [x] ++ drop (n+1) xs)
-    where (c,x) = update w (xs !! n)
-
-updateOneOf :: OneOf model -> [model] -> [model]
-updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws
-
-data OneOf a = OneOf Int a
-  deriving Show
-
-arrayOf :: [Remote msg] -> Remote (OneOf msg)
-arrayOf rs = array
-  [ OneOf i <$> r
-  | (r,i) <- rs `zip` [0..]
-  ]
 
 ------------------------------------------------------------------------------
 data RuntimeState model = RuntimeState
@@ -129,35 +86,4 @@ elmArchitecture  m = start $ \ e -> do
 ------------------------------------------------------------------------------
 -- Primitive widgets
 
-tag :: String -> Remote msg
-tag = send . pack
-
-primitive :: (ToJSON m, ToResponse m) => String -> m -> Remote m
-primitive txt n = object 
-      [ ("type"  , tag txt)  -- type gives the type name
-      , ("value" , send n)   -- the outgoing value
-      , ("event" , recv)     -- the event reply
-      ]  
-
-
--- Here are the base instances. 
--- We do not default view to this pattern, 
--- because it would complicate the API for Widget to save 4 lines of 
--- (internal) code.
-
-instance Widget Double where
-  type Msg Double = Double
-  view = primitive $ show $ witness @Double
-
-instance Widget Text where
-  type Msg Text = Text
-  view = primitive $ show $ witness @Text
-
-instance Widget Bool where
-  type Msg Bool = Bool
-  view = primitive $ show $ witness @Bool
-
-instance Widget () where
-  type Msg () = ()
-  view = primitive $ show $ witness @()
 

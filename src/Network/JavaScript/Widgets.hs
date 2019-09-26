@@ -4,6 +4,7 @@
 module Network.JavaScript.Widgets where
 
 import Network.JavaScript.ElmArchitecture
+import Network.Earthquake.Widget
 
 newtype Slider = Slider Double
   deriving (Eq, Ord, Show)
