@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 
-module Network.JavaScript.Remote
+module Network.Earthquake.Remote
   ( Remote
   , Pair
   , Response

@@ -15,7 +15,7 @@
 
 module Network.JavaScript.ElmArchitecture (
   module Network.JavaScript.ElmArchitecture,
-  module Network.JavaScript.Remote) where
+  module Network.Earthquake.Remote) where
 
 import Control.Monad.Trans.State   (State,put,get,runState,evalState,execState)
 import Control.Applicative         ((<|>))
@@ -28,7 +28,7 @@ import Control.Monad.Trans.Writer  (Writer,runWriter,tell, mapWriter)
 import Network.JavaScript          (sendA, command, call, value, start, Application, listen)
 import Data.Text(Text, pack)
 
-import Network.JavaScript.Remote
+import Network.Earthquake.Remote
 
 data Cmd model where
   Promise :: IO (Msg model) -> Cmd model
