@@ -16,6 +16,7 @@ module Network.JavaScript.Remote
   , sendRemote
   , recvRemote
   , ResponseEvent
+  , witness
   ) where
 
 import Control.Applicative         ((<|>))
@@ -44,6 +45,12 @@ data Response msg where
   ResponseDouble :: Response Double
   ResponseText   :: Response Text
   ResponseBool   :: Response Bool
+
+instance Show (Response msg) where
+  show ResponseUnit   = "unit"
+  show ResponseDouble = "double"
+  show ResponseText   = "text"
+  show ResponseBool   = "bool"
 
 class ToResponse msg where
   witness :: Response msg
