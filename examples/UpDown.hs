@@ -9,8 +9,9 @@ module Main where
 -- import Data.Aeson             
 import Web.Scotty
 
-import Network.JavaScript.ElmArchitecture
 import Network.Earthquake.Widget
+import Network.Earthquake.Runtime
+import Network.Earthquake.Remote
 
 import Paths_earthquake
 
@@ -35,5 +36,5 @@ main_ i = do
 --  dataDir <- return "."
   scotty i $ do
     get "/" $ file $ dataDir ++ "/examples/UpDown.html"
-    middleware $ elmArchitecture $ Counter 0
+    middleware $ runtime $ Counter 0
             

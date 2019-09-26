@@ -1,49 +1,31 @@
-{-# OPTIONS_GHC -w #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Network.JavaScript.ElmArchitecture (
-  module Network.JavaScript.ElmArchitecture,
-  module Network.Earthquake.Remote) where
+module Network.Earthquake.Runtime where
 
-import Control.Monad.Trans.State   (State,put,get,runState,evalState,execState)
-import Control.Applicative         ((<|>))
-import Data.Aeson                  (Value,ToJSON,toJSON,FromJSON(..),withObject,(.:), Result(..),fromJSON,(.=))
-import Data.Maybe
-import qualified Data.Aeson as A
-
-import Control.Monad.Trans.Writer  (Writer,runWriter,tell, mapWriter)
+import Control.Monad.Trans.State   (runState,evalState)
+import Data.Aeson                  (Result(..),fromJSON)
 
 import Network.JavaScript          (sendA, command, call, value, start, Application, listen)
-import Data.Text(Text, pack)
 
-import Network.Earthquake.Remote
+
 import Network.Earthquake.Cmd
+import Network.Earthquake.Remote
 import Network.Earthquake.Widget
 
-
-------------------------------------------------------------------------------
 data RuntimeState model = RuntimeState
   { theModel :: model
   , theTick  :: Int
   }
 
-elmArchitecture :: forall model .
+runtime :: forall model .
                    (Show model, Widget model)
                 => model
                 -> Application -> Application
-elmArchitecture  m = start $ \ e -> do
+runtime m = start $ \ e -> do
   print "elmArch"
   let render :: RuntimeState model
              -> IO ()
