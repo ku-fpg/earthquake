@@ -9,7 +9,7 @@ module Network.Earthquake.Runtime where
 import Control.Monad.Trans.State   (runState,evalState)
 import Data.Aeson                  (Result(..),fromJSON)
 
-import Network.JavaScript          (sendA, command, call, value, start, Application, listen)
+import Network.JavaScript          (sendA, command, call, value, start, Application, listen, Engine)
 
 
 import Network.Earthquake.Cmd
@@ -17,28 +17,33 @@ import Network.Earthquake.Remote
 import Network.Earthquake.Widget
 
 data RuntimeState model = RuntimeState
-  { theModel :: model
-  , theTick  :: Int
+  { theModel :: !model
+  , theTick  :: !Int
   }
 
-runtime :: forall model .
-                   (Show model, Widget model)
-                => model
-                -> Application -> Application
-runtime m = start $ \ e -> do
+runtime :: (Show model, Widget model)
+        => model
+	-> Application -> Application
+runtime = start . jsbRuntime
+
+jsbRuntime :: (Show model, Widget model)
+        => model
+        -> Engine -> IO ()
+jsbRuntime m e = do -- = start $ \ e -> do
   print "elmArch"
-  let render :: RuntimeState model
+  let render :: Widget model 
+      	     => RuntimeState model
              -> IO ()
       render state@RuntimeState{..} = do
-        print theModel
-        let theView = view @model theModel
+        let theView = view theModel
         let s0 = 0
         let (json,_) = runState (sendRemote theView) 0
         print ("json",json)
         sendA e $ command $ call "jsb.render" [value (0::Int),value json]
         wait state theView
 
-      wait :: RuntimeState model
+      wait :: Widget model
+      	   => RuntimeState model
            -> Remote (Msg model)
 	   -> IO ()
       wait state@RuntimeState{..} theView = do 
