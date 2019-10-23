@@ -29,6 +29,7 @@ source-repository head
 library
   exposed-modules:     Network.Earthquake.Cmd,
                        Network.Earthquake.Remote,
+                       Network.Earthquake.Update,
                        Network.Earthquake.Widget,
                        Network.Earthquake.Runtime,
                        Network.JavaScript.Widgets

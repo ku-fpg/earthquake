@@ -36,12 +36,6 @@ class Widget model where
   -- for when the message and the model have the same type.
   update msg _ = pure msg
 
-newtype Pure a b = Pure b
-  deriving (Eq, Ord)
-
-instance Bifunctor Pure where
-  bimap _ g (Pure a) = Pure (g a)
-
 instance (Widget model) => Widget [model] where
   type Msg [model] = OneOf (Msg model)
   type Update [model] m = (Update model m, Bifunctor m)

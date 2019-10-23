@@ -12,6 +12,7 @@ import Web.Scotty
 import Network.Earthquake.Widget
 import Network.Earthquake.Runtime
 import Network.Earthquake.Remote
+import Network.Earthquake.Update
 
 import Paths_earthquake
 
@@ -36,5 +37,5 @@ main_ i = do
 --  dataDir <- return "."
   scotty i $ do
     get "/" $ file $ dataDir ++ "/examples/UpDown.html"
-    middleware $ runtime id $ Counter 0
+    middleware $ runtime runPure $ Counter 0
             

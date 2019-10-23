@@ -23,7 +23,7 @@ data RuntimeState model = RuntimeState
 
 runtime :: forall model m .
            (Show model, Widget model, Update model m)
-        => (forall a b . m a b -> (a,b))
+        => (forall a b . Monoid a => m a b -> (a,b))
         -> model
         -> Application -> Application
 runtime run m = start $ \ e -> do
