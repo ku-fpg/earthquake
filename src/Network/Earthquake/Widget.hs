@@ -2,35 +2,63 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Network.Earthquake.Widget where
 
 import Data.Aeson                  (ToJSON)
+import Data.Bifunctor
 import Data.Text(Text, pack)
+import GHC.Exts (Constraint)
 
 import Network.Earthquake.Remote
 import Network.Earthquake.Cmd
 
 class Widget model where
   type Msg model
+  
+  type W model (m :: * -> * -> *) :: Constraint
+  type W model m = Updated m
+  
   view           :: model 
                  -> Remote (Msg model)
-  update         :: Msg model 
-                 -> model 
-                 -> (Cmd (Msg model),model)
-  default update :: (model ~ Msg model) 
+  update         :: W model m
                  => Msg model 
                  -> model 
-                 -> (Cmd (Msg model),model)
+                 -> m (Cmd (Msg model)) model
+  default update :: (model ~ Msg model, Updated m)
+                 => Msg model 
+                 -> model 
+                 -> m (Cmd (Msg model)) model
+
   -- We default to the message being the new model,
   -- for when the message and the model have the same type.
-  update msg _ = pure msg
+  update msg _ = result msg
 
-instance Widget model => Widget [model] where
+class Bifunctor m => Updated m where
+  result :: b -> m (Cmd a) b
+
+instance Updated (,) where
+  result = pure
+
+newtype Pure a b = Pure b
+  deriving (Eq, Ord)
+
+instance Bifunctor Pure where
+  bimap _ g (Pure a) = Pure (g a)
+
+instance Updated Pure where
+  result = Pure 
+
+instance (Widget model) => Widget [model] where
   type Msg [model] = OneOf (Msg model)
+  type W [model] m = (W model m, Bifunctor m)
   view = arrayOf . map view
-  update (OneOf n w) xs = (OneOf n <$> c, take n xs ++ [x] ++ drop (n+1) xs)
-    where (c,x) = update w (xs !! n)
+  update (OneOf n w) xs = bimap
+    (OneOf n <$>)
+    (\ x -> take n xs ++ [x] ++ drop (n+1) xs)
+    (update w (xs !! n))
 
 updateOneOf :: OneOf model -> [model] -> [model]
 updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws

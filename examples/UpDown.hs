@@ -36,5 +36,5 @@ main_ i = do
 --  dataDir <- return "."
   scotty i $ do
     get "/" $ file $ dataDir ++ "/examples/UpDown.html"
-    middleware $ runtime $ Counter 0
+    middleware $ runtime id $ Counter 0
             

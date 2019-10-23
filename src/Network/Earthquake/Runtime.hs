@@ -21,11 +21,12 @@ data RuntimeState model = RuntimeState
   , theTick  :: Int
   }
 
-runtime :: forall model .
-                   (Show model, Widget model)
-                => model
+runtime :: forall model m .
+                   (Show model, Widget model, W model m, Updated m)
+                => (forall a b . m a b -> (a,b))
+                -> model
                 -> Application -> Application
-runtime m = start $ \ e -> do
+runtime run m = start $ \ e -> do
   print "elmArch"
   let render :: RuntimeState model
              -> IO ()
@@ -56,7 +57,7 @@ runtime m = start $ \ e -> do
                 print "no match found for event"
                 wait state theView
               Just theMsg -> 
-	        let (_,theModel') = update theMsg theModel in
+	        let (_,theModel') = run (update theMsg theModel) in
                 render $ RuntimeState { theModel = theModel'
                                       , theTick = theTick + 1
                                       }
