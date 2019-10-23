@@ -19,7 +19,7 @@ class Widget model where
   type Msg model
   
   type W model (m :: * -> * -> *) :: Constraint
-  type W model m = Updated m
+  type W model m = Applicative (m (Cmd (Msg model)))
   
   view           :: model 
                  -> Remote (Msg model)
@@ -27,14 +27,14 @@ class Widget model where
                  => Msg model 
                  -> model 
                  -> m (Cmd (Msg model)) model
-  default update :: (model ~ Msg model, Updated m)
+  default update :: (model ~ Msg model, Applicative (m (Cmd (Msg model))))
                  => Msg model 
                  -> model 
                  -> m (Cmd (Msg model)) model
 
   -- We default to the message being the new model,
   -- for when the message and the model have the same type.
-  update msg _ = result msg
+  update msg _ = pure msg
 
 class Bifunctor m => Updated m where
   result :: b -> m (Cmd a) b
