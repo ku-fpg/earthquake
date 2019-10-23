@@ -18,12 +18,12 @@ import Network.Earthquake.Cmd
 class Widget model where
   type Msg model
   
-  type W model (m :: * -> * -> *) :: Constraint
-  type W model m = Applicative (m (Cmd (Msg model)))
+  type Update model (m :: * -> * -> *) :: Constraint
+  type Update model m = Applicative (m (Cmd (Msg model)))
   
   view           :: model 
                  -> Remote (Msg model)
-  update         :: W model m
+  update         :: Update model m
                  => Msg model 
                  -> model 
                  -> m (Cmd (Msg model)) model
@@ -36,24 +36,15 @@ class Widget model where
   -- for when the message and the model have the same type.
   update msg _ = pure msg
 
-class Bifunctor m => Updated m where
-  result :: b -> m (Cmd a) b
-
-instance Updated (,) where
-  result = pure
-
 newtype Pure a b = Pure b
   deriving (Eq, Ord)
 
 instance Bifunctor Pure where
   bimap _ g (Pure a) = Pure (g a)
 
-instance Updated Pure where
-  result = Pure 
-
 instance (Widget model) => Widget [model] where
   type Msg [model] = OneOf (Msg model)
-  type W [model] m = (W model m, Bifunctor m)
+  type Update [model] m = (Update model m, Bifunctor m)
   view = arrayOf . map view
   update (OneOf n w) xs = bimap
     (OneOf n <$>)

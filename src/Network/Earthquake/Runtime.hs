@@ -22,10 +22,10 @@ data RuntimeState model = RuntimeState
   }
 
 runtime :: forall model m .
-                   (Show model, Widget model, W model m, Updated m)
-                => (forall a b . m a b -> (a,b))
-                -> model
-                -> Application -> Application
+           (Show model, Widget model, Update model m)
+        => (forall a b . m a b -> (a,b))
+        -> model
+        -> Application -> Application
 runtime run m = start $ \ e -> do
   print "elmArch"
   let render :: RuntimeState model
