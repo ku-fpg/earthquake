@@ -6,10 +6,12 @@
 
 module Network.Earthquake.Runtime where
 
+import Control.Concurrent.STM
 import Control.Monad.Trans.State   (runState,evalState)
 import Data.Aeson                  (Result(..),fromJSON)
 
 import Network.JavaScript          (sendA, command, call, value, start, Application, listen, Engine)
+
 
 
 import Network.Earthquake.Cmd
@@ -19,6 +21,7 @@ import Network.Earthquake.Widget
 data RuntimeState model = RuntimeState
   { theModel :: !model
   , theTick  :: !Int
+  , theResp  :: !(TChan (Msg model))
   }
 
 runtime :: (Show model, Widget model)
@@ -60,13 +63,16 @@ jsbRuntime m e = do -- = start $ \ e -> do
               Nothing -> do
                 print "no match found for event"
                 wait state theView
-              Just theMsg -> 
-	        let (_,theModel') = update theMsg theModel in
-                render $ RuntimeState { theModel = theModel'
-                                      , theTick = theTick + 1
-                                      }
+              Just theMsg -> do
+	        let (cmds,theModel') = update theMsg theModel
+		() <- spawnCmd theResp cmds
+                render $ state { theModel = theModel'
+                               , theTick = theTick + 1
+                               }
+  ch <- newTChanIO
   render $ RuntimeState { theModel = m
                         , theTick = 0
+			, theResp = ch
                         }
 
 
