@@ -1,5 +1,7 @@
 module Network.Earthquake.Update where
 
+-- Alternatives to 2-tuples for update.
+
 import Data.Bifunctor
 
 class External m where
@@ -11,8 +13,9 @@ instance External (,) where
 class Context m where
    context :: (s -> m s a b) -> m s a b
 
--- Alternatives to 2-tuples for update.
-
+------------------------------------------------------------------------------
+-- | The simple return type, with *no* mechanism for
+--   generating external commands.
 newtype Pure a b = Pure b
 
 runPure :: Monoid a => Pure a b -> (a,b)
@@ -27,6 +30,10 @@ instance Applicative (Pure a) where
 
 instance Bifunctor Pure where
   bimap _ g (Pure a) = Pure (g a)
+
+------------------------------------------------------------------------------
+-- | Two-tuples with a context. Allows global handles
+--   to be passed into the update function.
 
 newtype Reader s a b = Reader (s -> (a,b))
 
