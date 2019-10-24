@@ -30,6 +30,8 @@ library
   exposed-modules:     Network.Earthquake.Cmd,
                        Network.Earthquake.Remote,
                        Network.Earthquake.Widget,
+                       Network.Earthquake.Widget.Button,
+                       Network.Earthquake.Widget.Slider,
                        Network.Earthquake.Runtime,
                        Network.JavaScript.Widgets
   -- other-modules:
