@@ -24,15 +24,19 @@ data RuntimeState model = RuntimeState
   , theResp  :: !(TChan (Msg model))
   }
 
-runtime :: (Show model, Widget model)
-        => model
+runtime :: forall model m .
+	   (Show model, Widget model, Update model m)
+        => (forall a b . Monoid a => m a b -> (a,b))
+	-> model
 	-> Application -> Application
-runtime = start . jsbRuntime
+runtime run m = start $ jsbRuntime run m
 
-jsbRuntime :: (Show model, Widget model)
-        => model
+jsbRuntime :: forall model m .
+           (Show model, Widget model, Update model m)
+        => (forall a b . Monoid a => m a b -> (a,b))
+        -> model
         -> Engine -> IO ()
-jsbRuntime m e = do -- = start $ \ e -> do
+jsbRuntime run m e = do
   print "elmArch"
   let render :: Widget model 
       	     => RuntimeState model
@@ -64,7 +68,7 @@ jsbRuntime m e = do -- = start $ \ e -> do
                 print "no match found for event"
                 wait state theView
               Just theMsg -> do
-	        let (cmds,theModel') = update theMsg theModel
+	        let (cmds,theModel') = run $ update theMsg theModel
 		() <- spawnCmd theResp cmds
                 render $ state { theModel = theModel'
                                , theTick = theTick + 1
