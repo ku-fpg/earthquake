@@ -7,8 +7,7 @@ import Control.Concurrent
 import Control.Concurrent.STM
 
 data Cmd msg where
-  Promise :: IO msg -> Cmd msg
---  Ticker :: Int -> IO msg -> Cmd msg
+  Futures :: (TChan msg -> IO ()) -> Cmd msg
   MconcatCmd :: [Cmd msg] -> Cmd msg
   FmapCmd :: (a -> b) -> Cmd a -> Cmd b
 
@@ -24,11 +23,14 @@ instance Monoid (Cmd msg) where
   mconcat = MconcatCmd
 
 cmd :: IO msg -> Cmd msg
-cmd = Promise
+cmd io = futures $ \ ch -> io >>= atomically . writeTChan ch
+
+futures :: (TChan msg -> IO ()) -> Cmd msg
+futures = Futures
 
 spawnCmd :: TChan msg -> Cmd msg -> IO ()
-spawnCmd ch (Promise io) = do
-  _ <- forkIO $ io >>= atomically . writeTChan ch
+spawnCmd ch (Futures io) = do
+  _ <- forkIO $ io ch
   return ()
 spawnCmd ch (MconcatCmd cmds) = sequence_ (spawnCmd ch <$> cmds)
 spawnCmd ch (FmapCmd f cmds) = do
