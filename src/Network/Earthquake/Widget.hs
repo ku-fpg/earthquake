@@ -9,6 +9,7 @@ module Network.Earthquake.Widget where
 
 import Data.Aeson                  (ToJSON)
 import Data.Bifunctor
+import Data.Biapplicative
 import Data.Text(Text, pack)
 import GHC.Exts (Constraint)
 
@@ -17,32 +18,26 @@ import Network.Earthquake.Cmd
 
 class Widget model where
   type Msg model
-  
---  type Update model (m :: * -> * -> *) :: Constraint
---  type Update model m = Applicative (m (Cmd (Msg model)))
-  
-  view           :: model 
-                 -> Remote (Msg model)
-{-
-  update         :: Update model m
-                 => Msg model 
-                 -> model 
-                 -> m (Cmd (Msg model)) model
-  default update :: (model ~ Msg model, Applicative (m (Cmd (Msg model))))
-                 => Msg model 
-                 -> model 
-                 -> m (Cmd (Msg model)) model
+  view :: model  -> Remote (Msg model)
 
-  -- We default to the message being the new model,
-  -- for when the message and the model have the same type.
-  update msg _ = pure msg
--}
+self :: (Applicative f, Widget model, model ~ Msg model)  => Msg model -> model -> f model
+self msg _ = pure msg
+
+class Widget model => ApplicativeUpdate model where
+  updateA :: Applicative f
+  	  => Msg model 
+          -> model 
+          -> f model
+
+class Widget model => BifunctorUpdate model where
+  updateB :: Bifunctor f
+  	  => Msg model 
+          -> model
+          -> f (Cmd (Msg model)) model
+ 
 instance (Widget model) => Widget [model] where
   type Msg [model] = OneOf (Msg model)
   view = arrayOf . map view
-
-self :: (Widget model, model ~ Msg model)  => Msg model -> model -> (Cmd (Msg model), model)
-self msg _ = pure msg
 
 updateOneOf :: OneOf model -> [model] -> [model]
 updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws
@@ -55,6 +50,17 @@ arrayOf rs = array
   [ OneOf i <$> r
   | (r,i) <- rs `zip` [0..]
   ]
+
+instance ApplicativeUpdate model => ApplicativeUpdate [model] where
+  updateA (OneOf n w) xs = fmap
+    (\ x -> updateOneOf (OneOf n x) xs)
+    (updateA w (xs !! n))
+
+instance BifunctorUpdate model => BifunctorUpdate [model] where
+  updateB (OneOf n w) xs = bimap
+    (OneOf n <$>)
+    (\ x -> updateOneOf (OneOf n x) xs)
+    (updateB w (xs !! n))
 
 -- Here are the base instances. We do not default view to this pattern, 
 -- because it would complicate the API for Widget to save 4 lines of 
