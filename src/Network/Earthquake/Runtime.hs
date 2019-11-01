@@ -18,19 +18,23 @@ import Network.Earthquake.Cmd
 import Network.Earthquake.Remote
 import Network.Earthquake.Widget
 
-runtime :: forall model m .
-	   (Show model, Widget model, Update model m)
-        => (forall a b . Monoid a => m a b -> (a,b))
-	-> m (Cmd (Msg model)) model
+runtime :: forall model .
+	   (Show model, Widget model)
+--        => (forall a b . Monoid a => m a b -> (a,b))
+--	-> m (Cmd (Msg model)) model
+	=> (Cmd (Msg model), model)	                    -- model
+	-> (model -> Remote (Msg model))                    -- view
+	-> (Msg model -> model -> (Cmd (Msg model), model)) -- update
 	-> Application -> Application
-runtime run m = start $ jsbRuntime run m
+runtime m v u = start $ jsbRuntime m v u
 
-jsbRuntime :: forall model m .
-           (Show model, Widget model, Update model m)
-        => (forall a b . Monoid a => m a b -> (a,b))
-	-> m (Cmd (Msg model)) model
+jsbRuntime :: forall model .
+           (Show model, Widget model)
+        => (Cmd (Msg model), model)	                    -- model
+	-> (model -> Remote (Msg model))                    -- view
+	-> (Msg model -> model -> (Cmd (Msg model), model)) -- update
         -> Engine -> IO ()
-jsbRuntime run m e = do
+jsbRuntime m v u e = do 
   print "elmArch"
   theResp <- newTChanIO
   let render :: Widget model 
@@ -38,7 +42,7 @@ jsbRuntime run m e = do
 	     -> Int
              -> IO ()
       render theModel theTick = do
-        let theView = view theModel
+        let theView = v theModel
         let s0 = 0
         let (json,_) = runState (sendRemote theView) 0
         print ("json",json)
@@ -64,21 +68,17 @@ jsbRuntime run m e = do
               Nothing -> do
                 print "no match found for event"
                 wait theModel theTick theView
-              Just theMsg -> act theTick $ update theMsg theModel
+              Just theMsg -> act theTick $ u theMsg theModel
 
       act :: Widget model 
       	  => Int
-	  -> m (Cmd (Msg model)) model
+	  -> (Cmd (Msg model), model)
 	  -> IO ()
-      act theTick modelAct = do 
-      	let (cmds,theModel) = run modelAct
+      act theTick (cmds, theModel) = do 
 	() <- spawnCmd theResp cmds
         render theModel $ theTick + 1
 
---  let (cmds,m') = run m
---  () <- spawnCmd ch cmds
   act 0 m 
-
 
 ------------------------------------------------------------------------------
 -- Primitive widgets

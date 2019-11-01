@@ -45,6 +45,9 @@ instance (Widget model) => Widget [model] where
     (\ x -> take n xs ++ [x] ++ drop (n+1) xs)
     (update w (xs !! n))
 
+self :: (Widget model, model ~ Msg model)  => Msg model -> model -> (Cmd (Msg model), model)
+self msg _ = pure msg
+
 updateOneOf :: OneOf model -> [model] -> [model]
 updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws
 
