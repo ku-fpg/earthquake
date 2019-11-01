@@ -22,6 +22,8 @@ instance Widget Button where
       , ("enabled", send en) 
       , ("click"  , (\ () -> Click) <$> recv)
       ]  
-  update (NewText txt) (Button _ en)  = pure $ Button txt en
-  update (Enable en)   (Button txt _) = pure $ Button txt en
-  update Click m = pure m
+
+update :: Applicative f => Msg Button -> Button -> f Button
+update (NewText txt) (Button _ en)  = pure $ Button txt en
+update (Enable en)   (Button txt _) = pure $ Button txt en
+update Click m = pure m

@@ -18,11 +18,12 @@ import Network.Earthquake.Cmd
 class Widget model where
   type Msg model
   
-  type Update model (m :: * -> * -> *) :: Constraint
-  type Update model m = Applicative (m (Cmd (Msg model)))
+--  type Update model (m :: * -> * -> *) :: Constraint
+--  type Update model m = Applicative (m (Cmd (Msg model)))
   
   view           :: model 
                  -> Remote (Msg model)
+{-
   update         :: Update model m
                  => Msg model 
                  -> model 
@@ -35,15 +36,10 @@ class Widget model where
   -- We default to the message being the new model,
   -- for when the message and the model have the same type.
   update msg _ = pure msg
-
+-}
 instance (Widget model) => Widget [model] where
   type Msg [model] = OneOf (Msg model)
-  type Update [model] m = (Update model m, Bifunctor m)
   view = arrayOf . map view
-  update (OneOf n w) xs = bimap
-    (OneOf n <$>)
-    (\ x -> take n xs ++ [x] ++ drop (n+1) xs)
-    (update w (xs !! n))
 
 self :: (Widget model, model ~ Msg model)  => Msg model -> model -> (Cmd (Msg model), model)
 self msg _ = pure msg
