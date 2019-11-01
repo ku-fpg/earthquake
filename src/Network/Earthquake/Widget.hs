@@ -29,8 +29,8 @@ class Widget model => ApplicativeUpdate model where
           -> model 
           -> f model
 
-class Widget model => BifunctorUpdate model where
-  updateB :: Bifunctor f
+class Widget model => BiapplicativeUpdate model where
+  updateB :: Biapplicative f
   	  => Msg model 
           -> model
           -> f (Cmd (Msg model)) model
@@ -56,7 +56,7 @@ instance ApplicativeUpdate model => ApplicativeUpdate [model] where
     (\ x -> updateOneOf (OneOf n x) xs)
     (updateA w (xs !! n))
 
-instance BifunctorUpdate model => BifunctorUpdate [model] where
+instance BiapplicativeUpdate model => BiapplicativeUpdate [model] where
   updateB (OneOf n w) xs = bimap
     (OneOf n <$>)
     (\ x -> updateOneOf (OneOf n x) xs)
