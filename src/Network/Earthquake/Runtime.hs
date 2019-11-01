@@ -23,18 +23,16 @@ runtime :: forall model .
 --        => (forall a b . Monoid a => m a b -> (a,b))
 --	-> m (Cmd (Msg model)) model
 	=> (Cmd (Msg model), model)	                    -- model
-	-> (model -> Remote (Msg model))                    -- view
 	-> (Msg model -> model -> (Cmd (Msg model), model)) -- update
 	-> Application -> Application
-runtime m v u = start $ jsbRuntime m v u
+runtime m u = start $ jsbRuntime m u
 
 jsbRuntime :: forall model .
            (Show model, Widget model)
         => (Cmd (Msg model), model)	                    -- model
-	-> (model -> Remote (Msg model))                    -- view
 	-> (Msg model -> model -> (Cmd (Msg model), model)) -- update
         -> Engine -> IO ()
-jsbRuntime m v u e = do 
+jsbRuntime m u e = do 
   print "elmArch"
   theResp <- newTChanIO
   let render :: Widget model 
@@ -42,7 +40,7 @@ jsbRuntime m v u e = do
 	     -> Int
              -> IO ()
       render theModel theTick = do
-        let theView = v theModel
+        let theView = view theModel
         let s0 = 0
         let (json,_) = runState (sendRemote theView) 0
         print ("json",json)
