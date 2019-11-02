@@ -1,18 +1,21 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 -- classic ToDo example. Based on the Elm version.
 
 module Main where
 
 import Web.Scotty
-import Data.Text
+import Data.Text as T
 import Data.Maybe
 import Text.Read (readMaybe)
 
-import Network.JavaScript.ElmArchitecture
-import Network.JavaScript.Widgets(Slider(..))
+import Network.Earthquake.Widget
+import Network.Earthquake.Runtime
+import Network.Earthquake.Remote
 
 import Paths_earthquake
 
@@ -25,7 +28,8 @@ main_ i = do
   dataDir <- return "."
   scotty i $ do
     get "/" $ file $ dataDir ++ "/examples/Sliders.html"
-    middleware $ elmArchitecture $ Task "Hello" False Nothing 99
+    middleware $ runtime (pure $ newTask "X" 99) updateA
+
 
 data Task = Task
     { description :: Text
@@ -35,23 +39,52 @@ data Task = Task
     } | NoTask
   deriving Show
 
-instance Widget Task Task where
-  widget task@Task{..} = object
-      [ "type"        := tag "Task"
-      , "description" := send description
-      , "completed"   := send completed
-      , "edits"       := send edits
-      , "id"          := send id
-      , "focus"       := wait $ task { edits = Just description }
-      , "edit"        := (\ msg -> task { edits = Just msg })
-                       <$> recv
-      , "cancel"      := wait $ task { edits = Nothing }
-      , "completed"   := (\ bool -> task { completed = bool })
-                       <$> recv
-      ]
-  widget NoTask = object ["type" := tag "NoTask"]
+newTask :: Text -> Int -> Task
+newTask desc id = Task
+    { description = desc
+    , completed = False
+    , edits = Nothing
+    , id = id
+    }
 
-  
+data TaskMsg
+  = Focus
+  | Edit Text
+  | Cancel
+  | Commit
+  | Completed Bool
+  | Delete
+
+instance Widget Task where
+  type Msg Task = TaskMsg
+  view task@Task{..} = object
+      [ ("type"        , tag "Task" )
+      , ("description" , send description )
+      , ("completed"   , send completed )
+      , ("edits"       , send edits )
+      , ("id"          , send id )
+      , ("focus"       , wait Focus )
+      , ("edit"        , Edit <$> recv )
+      , ("cancel"      , wait Cancel )
+      , ("completed"   , Completed <$> recv )
+      , ("delete"      , wait Delete )
+      ]
+  view NoTask = object [("type" , tag "NoTask")]
+
+instance ApplicativeUpdate Task where
+  updateA Focus m@Task{description}  = pure $ m { edits = Just description }
+  updateA (Edit description) m       = pure $ m { edits = Just description }
+  updateA Cancel m                   = pure $ m { edits = Nothing }
+  updateA Commit m@Task{edits,description} = case edits of
+    Nothing -> pure m
+    Just raw | T.null raw -> pure NoTask
+             | otherwise -> pure $ m { edits = Nothing
+	     	       		     , description = description 
+				     }
+  updateA (Completed bool) m = pure $ m { completed = bool }
+  updateA Delete _ = pure NoTask
+
+{-
 data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks
     , field      :: String      -- ??
@@ -94,4 +127,4 @@ option xs x = object
 sendShow :: Show a => a -> Remote w
 sendShow = send . pack . show
   
-      
+-}

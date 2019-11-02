@@ -55,6 +55,14 @@
 	      return jsb.renders[o.type](el,o);
 	  }
 	  el.innerHTML = "<code>" + JSON.stringify(o) + "</code>"
+	  el.innerHTML += "<code>{</code><table></table>";
+          let tab = el.querySelector("table");
+          let ch = "{";
+          for (let a in o) {
+             tab.innerHTML += "<tr><td>" + ch + "</td><td align='right'>\"" + a + "\":</td></tr>";
+             ch = ",";
+          }
+          tab.innerHTML += "<tr><td><code>}</code></td></tr>";
 	  return;
       }
       jsb.renders.Double = (el,o) => {
