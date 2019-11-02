@@ -26,6 +26,8 @@ import qualified Data.Aeson as A
 import Data.Maybe(isJust)
 import Data.Text(Text)
 
+import Prelude hiding (id)
+
 -- | A 'Remote' functor that returns a message when evaluated.
 data Remote msg where
   Send       :: ToJSON a => a -> Remote msg
@@ -109,7 +111,12 @@ recv = Response witness
 
 sendRemote :: Remote msg -> State Int Value
 sendRemote (Send a) = pure $ toJSON a
-sendRemote (Response _) = toJSON <$> alloc 
+sendRemote (Response r) = do
+  id <- toJSON <$> alloc
+  return $ A.object
+    [ ("type" .= show r)
+    , ("id"   .= id)
+    ]
 sendRemote (MapRemote _ r) = sendRemote r
 sendRemote (Object pairs) = A.object <$> sequenceA
   [ (lbl .=) <$> sendRemote r

@@ -22,7 +22,7 @@
       }
       jsb.clicker = (id,field) => {
           document.querySelector(id).onclick = function(e) {      
-              jsb.view && jsb.event({id:jsb.view[field],value:[],tick:jsb.tick});
+              jsb.view && jsb.event({id:jsb.view[field].id,value:[],tick:jsb.tick});
           }
       }
       jsb.clicker('#inc-button','up')
