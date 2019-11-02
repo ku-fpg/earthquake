@@ -93,6 +93,10 @@
       jsb.renders.text = (el,o) => {
         el.innerHTML = "<button></button><input></input>&nbsp;<code style=\"font-size: xx-small\"></code>"
 	el.querySelector("button").textContent = "Text";
+        let input = el.querySelector("input")
+        el.querySelector("button").addEventListener("click",function(e) {
+            jsb.event({id:o.id,value:input.value,tick:jsb.tick})
+        })
 	el.querySelector("code").textContent = JSON.stringify(o);
       }
       jsb.renders.double = (el,o) => {
