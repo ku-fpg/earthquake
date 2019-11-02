@@ -49,23 +49,56 @@
       }
       jsb.renders.Object = (el,o) => {
 	  console.log("Object",el,o);
-	  el.innerHTML += "<table style=\"border-spacing:0 border-collapse:collapse\"><tbody></tbody></table>";
+	  el.innerHTML = "<table style=\"border: 0; padding: 0; border-spacing:0; border-collapse:collapse\"><tbody></tbody></table>";
           let tab = el.querySelector("tbody");
           let ch = "{";
           let last = "";
           for (let a in o) last = a;
           for (let a in o) {
              let uniq = jsb.uniq++
-             tab.innerHTML += "<tr>" +
-                 "<td valign=\"top\"><code>" + ch + "</code></td>" +
-	         "<th align=\"right\" valign=\"top\">\"" + a + "\":</th>" +
-	         "<td id=\"uniq-" + uniq + "\"></td>" +
-                 "</tr>";
+             tab.insertAdjacentHTML('beforeEnd',"<tr>" +
+                 "<td valign=\"top\" style=\"padding:0\"><code>" + ch + "</code></td>" +
+	         "<th align=\"right\" valign=\"top\" style=\"padding:0\"><code>\"<span id=\"uniq-X-" + uniq + "\"></span>\":&nbsp;</code></th>" +
+	         "<td id=\"uniq-" + uniq + "\" style=\"padding:0\"></td>" +
+                 "</tr>");
+             el.querySelector("#uniq-X-" + uniq).textContent = a;
              let sub = el.querySelector("#uniq-" + uniq);             
              jsb.renders.generic(sub,o[a]);
              ch = ",";
           }
-          tab.innerHTML += "<tr><td valign=\"top\"><code>}</code></td></tr>";
+          tab.insertAdjacentHTML('beforeEnd',"<tr><td valign=\"top\"><code>}</code></td></tr>");
+      }
+      jsb.renders.unit = (el,o) => {
+        el.innerHTML = "<button></button>&nbsp;<code style=\"font-size: xx-small\"></code>"
+        let button = el.querySelector("button");
+	el.querySelector("button").textContent = "Click";
+        button.addEventListener("click",function(e) {
+            console.log("click",e);
+            jsb.event({id:o.id,value:[],tick:jsb.tick})
+        })
+	el.querySelector("code").textContent = JSON.stringify(o);
+      }
+      jsb.renders.bool = (el,o) => {
+        el.innerHTML = "<button></button><button></button>&nbsp;<code style=\"font-size: xx-small\"></code>"
+	el.querySelectorAll("button")[0].textContent = "True";
+        el.querySelectorAll("button")[0].addEventListener("click",function(e) {
+            jsb.event({id:o.id,value:true,tick:jsb.tick})
+        })
+	el.querySelectorAll("button")[1].textContent = "False";
+        el.querySelectorAll("button")[1].addEventListener("click",function(e) {
+            jsb.event({id:o.id,value:false,tick:jsb.tick})
+        })
+	el.querySelector("code").textContent = JSON.stringify(o);
+      }
+      jsb.renders.text = (el,o) => {
+        el.innerHTML = "<button></button><input></input>&nbsp;<code style=\"font-size: xx-small\"></code>"
+	el.querySelector("button").textContent = "Text";
+	el.querySelector("code").textContent = JSON.stringify(o);
+      }
+      jsb.renders.double = (el,o) => {
+        el.innerHTML = "<button></button><input type=\"number\"></input>&nbsp;<code style=\"font-size: xx-small\"></code>"
+	el.querySelector("button").textContent = "Double";
+	el.querySelector("code").textContent = JSON.stringify(o);
       }
       jsb.renders.generic = (el,o) => {
 	  console.log("generic",el,o);

@@ -60,7 +60,7 @@ instance Widget Task where
   view task@Task{..} = object
       [ ("type"        , tag "Task" )
       , ("description" , send description )
-      , ("completed"   , send completed )
+      , ("complete"    , send completed )
       , ("edits"       , send edits )
       , ("id"          , send id )
       , ("focus"       , wait Focus )
