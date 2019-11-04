@@ -94,26 +94,22 @@ instance (BiapplicativeUpdate m1, BiapplicativeUpdate m2) =>
 
 instance Widget Double where
   type Msg Double = Double
-  view = primitive $ show $ witness @Double
+  view = primitive "double"
 
 instance Widget Text where
   type Msg Text = Text
-  view = primitive $ show $ witness @Text
+  view = primitive "text"
 
 instance Widget Bool where
   type Msg Bool = Bool
-  view = primitive $ show $ witness @Bool
-
-instance Widget () where
-  type Msg () = ()
-  view = primitive $ show $ witness @()
+  view = primitive "bool"
 
 tag :: String -> Remote msg
 tag = send . pack
 
-primitive :: (ToJSON m, ToResponse m) => String -> m -> Remote m
+primitive :: (ToJSON m, ToResponse m) => Text -> m -> Remote m
 primitive txt n = object 
-      [ ("type"  , tag txt)  -- type gives the type name
+      [ ("type"  , send txt)  -- type gives the type name
       , ("value" , send n)   -- the outgoing value
       , ("event" , recv)     -- the event reply
       ]  
