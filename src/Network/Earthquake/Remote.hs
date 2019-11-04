@@ -16,22 +16,22 @@ module Network.Earthquake.Remote
   , sendRemote
   , recvRemote
   , ResponseEvent
-  , witness
+  , response
   ) where
 
 import Control.Applicative         ((<|>))
 import Control.Monad.Trans.State   (State,put,get)
-import Data.Aeson                  (Value,ToJSON,toJSON,FromJSON(..),withObject,(.:), (.=))
+import Data.Aeson                  (Value,ToJSON,toJSON,fromJSON,FromJSON(..),withObject,(.:), (.=), Result(..))
 import qualified Data.Aeson as A
 import Data.Maybe(isJust)
-import Data.Text(Text)
+import Data.Text(Text, unpack)
 
 import Prelude hiding (id)
 
 -- | A 'Remote' functor that returns a message when evaluated.
 data Remote msg where
   Send       :: ToJSON a => a -> Remote msg
-  Response   :: Response a -> Remote a
+  Response   :: FromJSON a => Text -> Remote a
   MapRemote  :: (a -> b) -> Remote a -> Remote b
   Object     :: [Pair msg] -> Remote msg
   Array      :: [Remote msg] -> Remote msg  
@@ -43,50 +43,35 @@ type Pair msg = (Text, Remote msg)
 
 -- | The types of response messages
 data Response msg where
-  ResponseUnit   :: Response ()
-  ResponseDouble :: Response Double
-  ResponseText   :: Response Text
-  ResponseBool   :: Response Bool
+  ResponseValue :: FromJSON msg => Text -> Response msg
 
 instance Show (Response msg) where
-  show ResponseUnit   = "unit"
-  show ResponseDouble = "double"
-  show ResponseText   = "text"
-  show ResponseBool   = "bool"
+  show (ResponseValue t) = unpack t
 
 class ToResponse msg where
-  witness :: Response msg
+  recv :: Remote msg
 
 instance ToResponse () where
-  witness = ResponseUnit
+  recv = response "unit"
 
 instance ToResponse Double where
-  witness = ResponseDouble
+  recv = response "double"
 
 instance ToResponse Text where
-  witness = ResponseText
+  recv = response "text"
 
 instance ToResponse Bool where
-  witness = ResponseBool
+  recv = response "bool"
 
--- | A response event, which is type evidence, id number, and value
+-- | A response event, which is id number, and value
 data ResponseEvent where
-  ResponseEvent :: Response a -> Int -> a -> ResponseEvent
-
-instance Show ResponseEvent where
-  show (ResponseEvent ResponseUnit   i a) = show (i,a)
-  show (ResponseEvent ResponseDouble i a) = show (i,a)
-  show (ResponseEvent ResponseText   i a) = show (i,a)
-  show (ResponseEvent ResponseBool   i a) = show (i,a)
+    ResponseEvent :: Int -> Value -> ResponseEvent
+  deriving Show
 
 instance FromJSON ResponseEvent where
-  parseJSON = withObject "ResponseEvent" $ \v ->
-    let response :: FromJSON a => Response a -> _ ResponseEvent
-        response r = ResponseEvent r <$> (v .: "id") <*> (v .: "value")
-    in response ResponseUnit   <|>
-       response ResponseDouble <|>
-       response ResponseText   <|>
-       response ResponseBool
+  parseJSON = withObject "ResponseEvent" $ \v -> ResponseEvent
+  	       <$> (v .: "id") 
+	       <*> (v .: "value")
 
 ------------------------------------------------------------------------------
 -- Builders  
@@ -103,8 +88,8 @@ wait a = fmap (\ () -> a) recv
 send :: ToJSON a => a -> Remote msg
 send = Send
 
-recv :: ToResponse msg => Remote msg
-recv = Response witness
+response :: FromJSON msg => Text -> Remote msg
+response = Response
 
 ------------------------------------------------------------------------------
 -- Sending
@@ -114,7 +99,7 @@ sendRemote (Send a) = pure $ toJSON a
 sendRemote (Response r) = do
   id <- toJSON <$> alloc
   return $ A.object
-    [ ("type" .= show r)
+    [ ("type" .= r)
     , ("id"   .= id)
     ]
 sendRemote (MapRemote _ r) = sendRemote r
@@ -129,15 +114,12 @@ sendRemote (Array rs) = toJSON <$> sequenceA (sendRemote <$> rs)
 
 recvRemote :: Remote msg -> ResponseEvent -> State Int (Maybe msg)
 recvRemote (Send {}) _ = pure Nothing
-recvRemote (Response r') (ResponseEvent r i e) = do
+recvRemote (Response _) (ResponseEvent i v) = do
   i' <- alloc
   if i == i'
-  then case (r',r,e) of
-         (ResponseUnit,ResponseUnit,()) -> return $ Just ()
-         (ResponseDouble,ResponseDouble,d) -> return $ Just d
-         (ResponseText,ResponseText,t) -> return $ Just t
-         (ResponseBool,ResponseBool,b) -> return $ Just b
-         _ -> return Nothing -- internal error!
+  then case fromJSON v of
+    Error{} -> return Nothing -- internal (type) error
+    Success a -> return $ Just a
   else pure Nothing
 recvRemote (Object pairs) we = f <$> sequenceA
     [ recvRemote r we
