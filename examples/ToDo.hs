@@ -17,7 +17,9 @@ import Network.Earthquake.Widget
 import Network.Earthquake.Runtime
 import Network.Earthquake.Remote
 
-import Paths_earthquake
+import qualified Task
+import           Task(Task)
+--import Paths_earthquake
 
 main :: IO ()
 main = main_ 3000
@@ -28,68 +30,8 @@ main_ i = do
   dataDir <- return "."
   scotty i $ do
     get "/" $ file $ dataDir ++ "/examples/Sliders.html"
-    middleware $ runtime (pure $ newTask "X" 99) updateA
+    middleware $ runtime (pure $ Task.newTask "X" 99) updateA
 
-
-data Task = Task
-    { description :: Text
-    , completed   :: Bool
-    , edits       :: Maybe Text
-    , id          :: Int
-    } | NoTask
-  deriving Show
-
-newTask :: Text -> Int -> Task
-newTask desc id = Task
-    { description = desc
-    , completed = False
-    , edits = Nothing
-    , id = id
-    }
-
-data TaskMsg
-  = Focus
-  | Edit Text
-  | Cancel
-  | Commit
-  | Completed Bool
-  | Delete
-
-instance Widget Task where
-  type Msg Task = TaskMsg
-  view task@Task{..} = object
-      [ ("type"        , tag "Task" )
-      , ("description" , send description )
-      , ("complete"    , send completed )
-      , ("edits"       , send edits )
-      , ("id"          , send id )
-      , ("focus"       , wait Focus )
-      , ("edit"        , Edit <$> recv )
-      , ("cancel"      , wait Cancel )
-      , ("commit"      , wait Commit )
-      , ("completed"   , Completed <$> recv )
-      , ("delete"      , wait Delete )
-      ]
-  view NoTask = object [("type" , tag "NoTask")]
-
-instance ApplicativeUpdate Task where
-  -- Focus means that you are actively editing
-  updateA Focus m@Task{description}  = pure $ m { edits = Just description }
-  -- An edit message updates the internal edit field.
-  updateA (Edit description) m       = pure $ m { edits = Just description }
-  -- cancel leaves the edit state (aka unfocus?)
-  updateA Cancel m                   = pure $ m { edits = Nothing }
-  -- can commit changes to this entry
-  updateA Commit m@Task{edits} = case edits of
-    Nothing -> pure m
-    Just raw | T.null raw -> pure NoTask
-             | otherwise -> pure $ m { edits = Nothing
-	     	       		     , description = raw
-				     }
-  updateA (Completed bool) m = pure $ m { completed = bool }
-  updateA Delete _ = pure NoTask
-
-{-
 data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks
     , field      :: String      -- ??
@@ -103,6 +45,7 @@ data Visibility = All | Completed | Active
 data Msg
     = ChangeVisibility Visibility
 
+{-
 instance Widget ToDo ToDo where
   widget todo@ToDo{..} = update <$> view
     where

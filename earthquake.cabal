@@ -72,6 +72,7 @@ executable earthquake-up-down
 executable earthquake-todo
   main-is:             Todo.hs
   other-modules:       Paths_earthquake
+                     , Task
   build-depends:       base                 >= 4.9 && < 4.14
                      , earthquake
                      , aeson                >= 1.0 && < 1.5
