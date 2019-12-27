@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- classic ToDo example. Based on the Elm version.
 
@@ -30,36 +31,57 @@ main_ i = do
   dataDir <- return "."
   scotty i $ do
     get "/" $ file $ dataDir ++ "/examples/Sliders.html"
-    middleware $ runtime (pure $ Task.newTask "X" 99) updateA
+
+    let startA = pure $ ToDo
+          { tasks = [Task.newTask "X" 99]
+          , field = "??"
+          , uid = 100
+          , visibility = All
+          }
+
+    middleware $ runtime startA updateA
 
 data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks
     , field      :: String      -- ??
     , uid        :: Int         -- name supply for id
     , visibility :: Visibility  --
-    }
+    } deriving (Show, Eq, Ord)
+    
   
 data Visibility = All | Completed | Active
   deriving (Show, Read, Eq, Ord)
 
-data Msg
+data TodoMsg
     = ChangeVisibility Visibility
+    | TaskMsg (OneOf Task.TaskMsg)
 
-{-
-instance Widget ToDo ToDo where
-  widget todo@ToDo{..} = update <$> view
+instance Widget ToDo where
+  type Msg ToDo = TodoMsg
+  
+  view :: ToDo -> Remote TodoMsg
+  view todo@ToDo{..} = object
+    [ ( "type"        , tag "ToDo" )
+    , ( "tasks"       , TaskMsg <$> view tasks )
+    , ( "field"       , send field )
+    , ( "uid"         , send uid )
+    , ( "visibility"  , send $ show $ visibility )
+    ]
+
+instance ApplicativeUpdate ToDo where
+  updateA :: Applicative f => TodoMsg -> ToDo -> f ToDo
+  updateA (TaskMsg u) todo@ToDo{..} = up <$> updateA u tasks
+    where up ts = todo { tasks = ts }
+
+{-  
+  view todo@ToDo{..} = update <$> view
     where
       update :: Msg -> ToDo
       update (ChangeVisibility v) = todo { visibility = v }
-      view :: Remote Msg
-      view = object
-          [ "type"        := tag "Todo"
-          , "tasks"       := (error "tasks" :: OneOf Task -> Msg) <$> widget tasks
-          , "field"       := send field
-          , "uid"         := send uid
-          , "visibility"  := ChangeVisibility <$> widget visibility
-          ]
 
+-}
+
+{-
 instance Widget Visibility Visibility where
   widget = option [All,Completed,Active]
 

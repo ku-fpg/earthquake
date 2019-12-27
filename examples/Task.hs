@@ -18,7 +18,7 @@ data Task = Task
     , edits       :: Maybe Text
     , id          :: Int
     } | NoTask
-  deriving Show
+  deriving (Show, Eq, Ord)
 
 newTask :: Text -> Int -> Task
 newTask desc id = Task
