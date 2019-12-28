@@ -52,9 +52,21 @@ data ToDo = ToDo
 data Visibility = All | Completed | Active
   deriving (Show, Read, Eq, Ord)
 
+{-
+type Msg
+    = NoOp
+    | UpdateField String
+    | Add
+    | UpdateTask ( Int, Todo.Task.Msg )
+    | DeleteComplete
+    | CheckAll Bool
+    | ChangeVisibility String
+-}
+
 data TodoMsg
     = ChangeVisibility Visibility
     | TaskMsg (OneOf Task.TaskMsg)
+    | UpdateTask Int Task.TaskMsg
 
 instance Widget ToDo where
   type Msg ToDo = TodoMsg
@@ -71,7 +83,11 @@ instance Widget ToDo where
 instance ApplicativeUpdate ToDo where
   updateA :: Applicative f => TodoMsg -> ToDo -> f ToDo
   updateA (TaskMsg u) todo@ToDo{..} = up <$> updateA u tasks
+    where up ts = todo { tasks = Prelude.filter (not . Task.isNoTask) ts }
+{-    
+  updateA (UpdateTask i t) todo@ToDo{..} = up <$> updateA u tasks
     where up ts = todo { tasks = ts }
+-}
 
 {-  
   view todo@ToDo{..} = update <$> view
