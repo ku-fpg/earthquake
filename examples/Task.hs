@@ -18,6 +18,7 @@ data Task = Task
     , edits       :: Maybe Text
     , id          :: Int
     } | NoTask
+        -- TODO: should be possible to abstract 
   deriving (Show, Eq, Ord)
 
 newTask :: Text -> Int -> Task
@@ -27,6 +28,10 @@ newTask desc id = Task
     , edits = Nothing
     , id = id
     }
+
+isNoTask :: Task -> Bool
+isNoTask NoTask = True
+isNoTask _ = False
 
 data TaskMsg
   = Focus
