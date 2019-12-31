@@ -4,6 +4,10 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 
 module Network.Earthquake.Widget where
 
@@ -12,6 +16,7 @@ import Data.Bifunctor
 import Data.Biapplicative
 import Data.Text(Text, pack)
 import GHC.Exts (Constraint)
+import Data.Maybe(catMaybes)
 
 import Network.Earthquake.Remote
 import Network.Earthquake.Cmd
@@ -42,10 +47,11 @@ instance (Widget model) => Widget [model] where
 
 updateOneOf :: OneOf model -> [model] -> [model]
 updateOneOf (OneOf n w) ws = take n ws ++ [w] ++ drop (n+1) ws
-updateOneOf (DelOne n)  ws = take n ws ++        drop (n+1) ws
+
+updateOrDeleteOneOf :: OneOf (Maybe model) -> [model] -> [model]
+updateOrDeleteOneOf op = catMaybes . updateOneOf op . fmap Just
 
 data OneOf a = OneOf Int a
-             | DelOne Int
   deriving Show
 
 arrayOf :: [Remote msg] -> Remote (OneOf msg)
@@ -54,24 +60,16 @@ arrayOf rs = array
   | (r,i) <- rs `zip` [0..]
   ]
 
-arrayOfMaybe :: [Remote (Maybe msg)] -> Remote (OneOf msg)
-arrayOfMaybe rs = array
-  [ maybe (DelOne i) (OneOf i) <$> r
-  | (r,i) <- rs `zip` [0..]
-  ]
-
 instance ApplicativeUpdate model => ApplicativeUpdate [model] where
   updateA (OneOf n w) xs = fmap
     (\ x -> updateOneOf (OneOf n x) xs)
     (updateA w (xs !! n))
-  updateA (DelOne n) xs = pure $ updateOneOf (DelOne n) xs
   
 instance BiapplicativeUpdate model => BiapplicativeUpdate [model] where
   updateB (OneOf n w) xs = bimap
     (OneOf n <$>)
     (\ x -> updateOneOf (OneOf n x) xs)
     (updateB w (xs !! n))
-  updateB (DelOne n) xs = bipure mempty (updateOneOf (DelOne n) xs)
 
 instance (Widget m1,Widget m2) => Widget (m1,m2) where
   type Msg (m1,m2) = Either (Msg m1) (Msg m2)
