@@ -82,12 +82,9 @@ instance Widget ToDo where
 
 instance ApplicativeUpdate ToDo where
   updateA :: Applicative f => TodoMsg -> ToDo -> f ToDo
-  updateA (TaskMsg u) todo@ToDo{..} = up <$> updateA u tasks
-    where up ts = todo { tasks = Prelude.filter (not . Task.isNoTask) ts }
-{-    
-  updateA (UpdateTask i t) todo@ToDo{..} = up <$> updateA u tasks
-    where up ts = todo { tasks = ts }
--}
+  updateA (TaskMsg (OneOf n w)) todo@ToDo{..} = pure $ todo
+    { tasks = updateOrDeleteOneOf (OneOf n $ Task.updateTask w (tasks !! n)) tasks
+    }    
 
 {-  
   view todo@ToDo{..} = update <$> view
