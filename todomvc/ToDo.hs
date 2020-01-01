@@ -15,6 +15,8 @@ import Data.Maybe
 import Text.Read (readMaybe)
 import Data.Char (isSpace)
 
+import Network.Wai.Middleware.RequestLogger
+
 import Network.Earthquake.Widget
 import Network.Earthquake.Runtime
 import Network.Earthquake.Remote
@@ -31,8 +33,10 @@ main_ i = do
 --  dataDir <- getDataDir
   dataDir <- return "."
   scotty i $ do
-    get "/" $ file $ dataDir ++ "/examples/Sliders.html"
-
+    middleware $ logStdoutDev
+   
+    get "/" $ file $ dataDir ++ "/todomvc/index.html"
+{-
     let startA = pure $ ToDo
           { tasks = []
           , field = ""
@@ -41,6 +45,8 @@ main_ i = do
           }
 
     middleware $ runtime startA updateA
+-}
+    return ()
 
 data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks

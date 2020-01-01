@@ -21,7 +21,8 @@ data-files:
   examples/UpDown.html
   examples/Slider.html
   examples/Sliders.html
-
+  todomvc/index.html
+  
 source-repository head
   type:                git
   location:            https://github.com/ku-fpg/earthquake
@@ -70,7 +71,7 @@ executable earthquake-up-down
   ghc-options:         -threaded -Wall
 
 executable earthquake-todo
-  main-is:             Todo.hs
+  main-is:             ToDo.hs
   other-modules:       Paths_earthquake
                      , Task
   build-depends:       base                 >= 4.9 && < 4.14
@@ -79,6 +80,7 @@ executable earthquake-todo
                      , text                 >= 1.2     && < 1.3
                      , javascript-bridge    == 0.2.*
                      , scotty               == 0.11.*
-  hs-source-dirs:      examples
+                     , wai-extra            == 3.*
+  hs-source-dirs:      todomvc
   default-language:    Haskell2010
   ghc-options:         -threaded -Wall
