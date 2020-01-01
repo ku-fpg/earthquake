@@ -13,6 +13,7 @@ import Web.Scotty
 import Data.Text as T
 import Data.Maybe
 import Text.Read (readMaybe)
+import Data.Char (isSpace)
 
 import Network.Earthquake.Widget
 import Network.Earthquake.Runtime
@@ -33,8 +34,8 @@ main_ i = do
     get "/" $ file $ dataDir ++ "/examples/Sliders.html"
 
     let startA = pure $ ToDo
-          { tasks = [Task.newTask "X" 99]
-          , field = "??"
+          { tasks = []
+          , field = ""
           , uid = 100
           , visibility = All
           }
@@ -43,7 +44,7 @@ main_ i = do
 
 data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks
-    , field      :: String      -- ??
+    , field      :: Text        -- The top entry textbox
     , uid        :: Int         -- name supply for id
     , visibility :: Visibility  --
     } deriving (Show, Eq, Ord)
@@ -64,9 +65,11 @@ type Msg
 -}
 
 data TodoMsg
-    = ChangeVisibility Visibility
+    = UpdateField Text
+    | Add
     | TaskMsg (OneOf Task.TaskMsg)
-    | UpdateTask Int Task.TaskMsg
+    | DeleteComplete
+    | ChangeVisibility Visibility
 
 instance Widget ToDo where
   type Msg ToDo = TodoMsg
@@ -78,14 +81,34 @@ instance Widget ToDo where
     , ( "field"       , send field )
     , ( "uid"         , send uid )
     , ( "visibility"  , send $ show $ visibility )
+      -- The input
+    , ( "add"         , wait Add )
+    , ( "updatefield" , UpdateField <$> recv )
+    , ( "deletecomplete", wait DeleteComplete )
     ]
 
 instance ApplicativeUpdate ToDo where
   updateA :: Applicative f => TodoMsg -> ToDo -> f ToDo
   updateA (TaskMsg (OneOf n w)) todo@ToDo{..} = pure $ todo
     { tasks = updateOrDeleteOneOf (OneOf n $ Task.updateTask w (tasks !! n)) tasks
-    }    
-
+    }
+  updateA (UpdateField txt) todo@ToDo{..} = pure $ todo
+    { field = txt
+    }
+  updateA Add todo@ToDo{..} = newModel
+    where description = T.strip field
+          newModel
+            | T.all isSpace description = pure todo
+            | otherwise = pure $ todo
+               { uid = succ uid
+               , field = ""
+               , tasks = tasks ++ [ Task.newTask description uid ]
+               }
+  updateA DeleteComplete todo@ToDo{..} = pure $ todo
+    { tasks = Prelude.filter (not . Task.isComplete) tasks
+    }
+            
+    
 {-  
   view todo@ToDo{..} = update <$> view
     where
