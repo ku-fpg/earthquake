@@ -12,6 +12,7 @@ module Main where
 import Web.Scotty
 import Data.Text as T
 import Data.Maybe
+import Data.String
 import Text.Read (readMaybe)
 import Data.Char (isSpace)
 
@@ -33,9 +34,21 @@ main_ i = do
 --  dataDir <- getDataDir
   dataDir <- return "."
   scotty i $ do
-    middleware $ logStdoutDev
    
     get "/" $ file $ dataDir ++ "/todomvc/index.html"
+
+    sequence_
+      [ get (fromString f) $ file $ dataDir ++ f
+      | f <- [ "/todomvc/node_modules/todomvc-common/base.css"
+             , "/todomvc/node_modules/todomvc-app-css/index.css"
+             , "/todomvc/css/app.css"
+             , "/todomvc/node_modules/todomvc-common/base.js"
+             , "/todomvc/js/app.js"
+             ]
+      ]
+
+    middleware $ logStdoutDev
+      
 {-
     let startA = pure $ ToDo
           { tasks = []
