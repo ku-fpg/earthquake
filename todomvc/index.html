@@ -4,11 +4,20 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Template • TodoMVC</title>
-f		<link rel="stylesheet" href="/todomvc/node_modules/todomvc-app-css/index.css">
+		<link rel="stylesheet" href="/todomvc/node_modules/todomvc-app-css/index.css">
 		<!-- CSS overrides - remove if you don't need it -->
 		<link rel="stylesheet" href="/todomvc/css/app.css">
 	</head>
 	<body>
+
+	        <script type="text/template" id="list-template">
+                   <ul>
+                      <% _.each(list, (i) => { %><li></li><% }); %>
+                   </ul>
+                </script>
+
+		<div id="raw"></div>
+		
 		<section class="todoapp">
 			<header class="header">
 				<h1>todos</h1>
@@ -67,7 +76,11 @@ f		<link rel="stylesheet" href="/todomvc/node_modules/todomvc-app-css/index.css"
 			<p>Created by <a href="http://todomvc.com">you</a></p>
 			<p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
 		</footer>
+
+		<div id="target"></div>
+		
 		<!-- Scripts here. Don't remove ↓ -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js"></script>		
 		<script src="/todomvc/js/app.js"></script>
 	</body>
 </html>

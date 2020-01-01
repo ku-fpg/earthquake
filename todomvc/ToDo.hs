@@ -49,21 +49,17 @@ main_ i = do
 
     middleware $ logStdoutDev
       
-{-
     let startA = pure $ ToDo
           { tasks = []
-          , field = ""
           , uid = 100
           , visibility = All
           }
 
     middleware $ runtime startA updateA
--}
-    return ()
+
 
 data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks
-    , field      :: Text        -- The top entry textbox
     , uid        :: Int         -- name supply for id
     , visibility :: Visibility  --
     } deriving (Show, Eq, Ord)
@@ -85,6 +81,7 @@ type Msg
 
 data TodoMsg
     = UpdateField Text
+    | CreateOnEnter Text
     | Add
     | TaskMsg (OneOf Task.TaskMsg)
     | DeleteComplete
@@ -97,12 +94,10 @@ instance Widget ToDo where
   view todo@ToDo{..} = object
     [ ( "type"        , tag "ToDo" )
     , ( "tasks"       , TaskMsg <$> view tasks )
-    , ( "field"       , send field )
     , ( "uid"         , send uid )
     , ( "visibility"  , send $ show $ visibility )
       -- The input
-    , ( "add"         , wait Add )
-    , ( "updatefield" , UpdateField <$> recv )
+    , ( "createOnEnter", CreateOnEnter <$> recv )
     , ( "deletecomplete", wait DeleteComplete )
     ]
 
@@ -111,16 +106,12 @@ instance ApplicativeUpdate ToDo where
   updateA (TaskMsg (OneOf n w)) todo@ToDo{..} = pure $ todo
     { tasks = updateOrDeleteOneOf (OneOf n $ Task.updateTask w (tasks !! n)) tasks
     }
-  updateA (UpdateField txt) todo@ToDo{..} = pure $ todo
-    { field = txt
-    }
-  updateA Add todo@ToDo{..} = newModel
-    where description = T.strip field
+  updateA (CreateOnEnter field_) todo@ToDo{..} = newModel
+    where description = T.strip field_
           newModel
             | T.all isSpace description = pure todo
             | otherwise = pure $ todo
                { uid = succ uid
-               , field = ""
                , tasks = tasks ++ [ Task.newTask description uid ]
                }
   updateA DeleteComplete todo@ToDo{..} = pure $ todo
