@@ -29,9 +29,8 @@ newTask desc id = Task
     , id = id
     }
 
-liftTask :: TaskMsg -> Maybe TaskMsg
-liftTask Delete = Nothing
-liftTask other = Just other
+isComplete :: Task -> Bool
+isComplete Task{..} = completed
 
 data TaskMsg
   = Focus
