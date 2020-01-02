@@ -23,7 +23,7 @@
  	        <input class="toggle" type="checkbox"
 		  <%= i.complete?"checked":"" %>
 		>
-                <label><%= i.description %></label>
+ 	        <label><%= _.escape(i.description) %></label>
                 <button class="destroy"></button>
               </div>
               <input class="edit" value="Rule the web">
