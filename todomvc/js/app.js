@@ -15,7 +15,11 @@
 	  // For debugging
 //	  jsb.renders.generic(document.querySelector('#target'),o);
 	  // Main rendering
-	  document.querySelector('#raw').innerHTML = "<code>" + JSON.stringify(o) + "</code>"	   
+	document.querySelector('#raw').innerHTML = "<code>" + JSON.stringify(o) + "</code>"
+	let tmpl = document.querySelector('#todos-list-template').innerHTML;
+	let el = document.querySelector('#todos-list');
+	// Brute force the list
+	el.innerHTML = _.template(tmpl)({tasks:o.tasks});	
     }
     jsb.enter = (ix) => {
 	let value = document.querySelector('.new-todo');
