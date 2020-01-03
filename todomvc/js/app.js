@@ -25,9 +25,9 @@
 	    .setAttribute("earthquake-clickbox",o.deletecomplete.id);
 	let left = _.filter(o.tasks,(i) => !i.complete).length;
 	console.log(left,o.tasks);
+	document.querySelector(".footer").style.display = left == 0?"none":null;
 	document.querySelector(".todo-count").innerHTML =
 	    "<strong>" + left + "<strong> item" + (left == 1?"":"s") + " left"
-	
 	
     }
     // For a given events, find the item number (starting at 0),
