@@ -32,6 +32,13 @@
 	    items == 0?"none":null;
 	document.querySelector(".todo-count").innerHTML =
 	    "<strong>" + left + "<strong> item" + (left == 1?"":"s") + " left"
+	_.map(document.querySelectorAll(".filters a"),i => {
+	    if (i.innerText == o.visibility) {
+		i.classList.add("selected")
+	    } else {
+		i.classList.remove("selected")
+	    }
+	})
 	
     }
     // For a given events, find the item number (starting at 0),
@@ -64,6 +71,20 @@
 		jsb.enter(null);
 	    }
 	});
+	window.addEventListener("hashchange",(e) => {
+	    let route = null;
+	    switch (window.location.hash) {
+	    case "":
+	    case "#/":
+		route = "All"; break;
+	    case "#/active":
+		route = "Active"; break;
+	    case "#/completed":
+		route = "Completed"; break;
+	    default:
+	    }
+	    route && jsb.event({id:jsb.view.router.id, value: route, tick:jsb.tick})
+	})
 	document.querySelector('body').addEventListener("click",(e) => {
 	    jsb.click_e = e;
 	    let checkbox = _.filter(e.path,(i) => i.getAttribute && i.getAttribute('earthquake-checkbox'))

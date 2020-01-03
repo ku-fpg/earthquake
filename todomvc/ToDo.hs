@@ -99,6 +99,7 @@ instance Widget ToDo where
       -- The input
     , ( "createOnEnter", CreateOnEnter <$> recv )
     , ( "deletecomplete", wait DeleteComplete )
+    , ( "router"       , (ChangeVisibility . read . unpack) <$> recv)
     ]
 
 instance ApplicativeUpdate ToDo where
@@ -117,30 +118,5 @@ instance ApplicativeUpdate ToDo where
   updateA DeleteComplete todo@ToDo{..} = pure $ todo
     { tasks = Prelude.filter (not . Task.isComplete) tasks
     }
-            
-    
-{-  
-  view todo@ToDo{..} = update <$> view
-    where
-      update :: Msg -> ToDo
-      update (ChangeVisibility v) = todo { visibility = v }
+  updateA (ChangeVisibility v) todo = pure $ todo { visibility = v }
 
--}
-
-{-
-instance Widget Visibility Visibility where
-  widget = option [All,Completed,Active]
-
--- an option choice, with default
-option :: (Show a, Read a) => [a] -> a -> Remote a
-option xs x = object
-   [ "type"    := tag "option"
-   , "options" := send $ show <$> xs
-   , "option"  := send $ show x
-   , "choice" := (fromMaybe x . readMaybe . unpack) <$> recv
-   ]
-
-sendShow :: Show a => a -> Remote w
-sendShow = send . pack . show
-  
--}
