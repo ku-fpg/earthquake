@@ -56,8 +56,20 @@
 	    let checkbox = _.filter(e.path,(i) =>
 		   i.attributes && i.attributes['earthquake-checkbox'])
 	    if (checkbox[0]) {
-		jsb.event({id:parseInt(checkbox[0].attributes['earthquake-checkbox'].value),
+		jsb.event({id:parseInt(checkbox[0].
+				       attributes['earthquake-checkbox'].
+				       value),
 			   value:checkbox[0].checked,
+			   tick:jsb.tick
+			  })
+	    }
+	    let clickbox = _.filter(e.path,(i) =>
+		   i.attributes && i.attributes['earthquake-clickbox'])
+	    if (clickbox[0]) {
+		jsb.event({id:parseInt(clickbox[0].
+				       attributes['earthquake-clickbox'].
+				       value),
+			   value:[],
 			   tick:jsb.tick
 			  })
 	    }
