@@ -21,17 +21,45 @@
 	// Brute force the list
 	el.innerHTML = _.template(tmpl)({tasks:o.tasks});	
     }
+    // For a given events, find the item number (starting at 0),
+    // or null for the top entry box.
+    jsb.offset = (e) => {
+	// Search upwards to the li tag
+	let item = _.filter(e.path, (i) => i.tagName == "LI")
+	if (item.length == 0) {
+	    // If there is no li, assume entry box
+	    return null;
+	}
+	return parseInt(item[0].attributes["data-item"].value)
+
+    }
+    
     jsb.enter = (ix) => {
 	let value = document.querySelector('.new-todo');
 	jsb.event({id:jsb.view.createOnEnter.id,value:value.value,tick:jsb.tick});
 	value.value = "";
     }
+    jsb.click = (e) => {
+	console.log("click",e);
+    }
+  
     // Generic for debugging. Will need to encapsulate.
     document.addEventListener("DOMContentLoaded",() => {
 	console.log("DOM Loaded");
 	document.querySelector('.new-todo').addEventListener("keydown",(e) => {
 	    if (e.keyCode == 13) {
 		jsb.enter(null);
+	    }
+	});
+	document.querySelector('#todos-list').addEventListener("click",(e) => {
+	    jsb.click_e = e;
+	    let checkbox = _.filter(e.path,(i) =>
+		   i.attributes && i.attributes['earthquake-checkbox'])
+	    if (checkbox[0]) {
+		jsb.event({id:parseInt(checkbox[0].attributes['earthquake-checkbox'].value),
+			   value:checkbox[0].checked,
+			   tick:jsb.tick
+			  })
 	    }
 	});
     })
