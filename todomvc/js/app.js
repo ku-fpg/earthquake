@@ -21,11 +21,15 @@
 	// Brute force the list
 	el.innerHTML = _.template(tmpl)({tasks:o.tasks});
 	// Update other features
+	let items = o.tasks.length;
+	let left  = _.filter(o.tasks,(i) => !i.complete).length;
+	let completed = items - left
 	document.querySelector(".clear-completed")
 	    .setAttribute("earthquake-clickbox",o.deletecomplete.id);
-	let left = _.filter(o.tasks,(i) => !i.complete).length;
-	console.log(left,o.tasks);
-	document.querySelector(".footer").style.display = left == 0?"none":null;
+	document.querySelector(".clear-completed").style.display =
+	    completed == 0?"none":null;
+	document.querySelector(".footer").style.display =
+	    items == 0?"none":null;
 	document.querySelector(".todo-count").innerHTML =
 	    "<strong>" + left + "<strong> item" + (left == 1?"":"s") + " left"
 	
