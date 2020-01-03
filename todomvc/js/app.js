@@ -19,7 +19,16 @@
 	let tmpl = document.querySelector('#todos-list-template').innerHTML;
 	let el = document.querySelector('#todos-list');
 	// Brute force the list
-	el.innerHTML = _.template(tmpl)({tasks:o.tasks});	
+	el.innerHTML = _.template(tmpl)({tasks:o.tasks});
+	// Update other features
+	document.querySelector(".clear-completed")
+	    .setAttribute("earthquake-clickbox",o.deletecomplete.id);
+	let left = _.filter(o.tasks,(i) => !i.complete).length;
+	console.log(left,o.tasks);
+	document.querySelector(".todo-count").innerHTML =
+	    "<strong>" + left + "<strong> item" + (left == 1?"":"s") + " left"
+	
+	
     }
     // For a given events, find the item number (starting at 0),
     // or null for the top entry box.
@@ -51,10 +60,9 @@
 		jsb.enter(null);
 	    }
 	});
-	document.querySelector('#todos-list').addEventListener("click",(e) => {
+	document.querySelector('body').addEventListener("click",(e) => {
 	    jsb.click_e = e;
-	    let checkbox = _.filter(e.path,(i) =>
-		   i.attributes && i.attributes['earthquake-checkbox'])
+	    let checkbox = _.filter(e.path,(i) => i.getAttribute && i.getAttribute('earthquake-checkbox'))
 	    if (checkbox[0]) {
 		jsb.event({id:parseInt(checkbox[0].
 				       attributes['earthquake-checkbox'].
@@ -63,8 +71,7 @@
 			   tick:jsb.tick
 			  })
 	    }
-	    let clickbox = _.filter(e.path,(i) =>
-		   i.attributes && i.attributes['earthquake-clickbox'])
+	    let clickbox = _.filter(e.path,(i) => i.getAttribute && i.getAttribute('earthquake-clickbox'))
 	    if (clickbox[0]) {
 		jsb.event({id:parseInt(clickbox[0].
 				       attributes['earthquake-clickbox'].
