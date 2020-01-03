@@ -48,6 +48,7 @@ instance Widget Task where
       , ("complete"    , send completed )
       , ("edits"       , send edits )
       , ("id"          , send id )
+        -- inputs
       , ("focus"       , wait Focus )
       , ("edit"        , Edit <$> recv )
       , ("cancel"      , wait Cancel )
