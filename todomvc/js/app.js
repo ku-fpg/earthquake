@@ -41,7 +41,12 @@
 		i.classList.remove("selected")
 	    }
 	})
-	
+	document.querySelector(".main input").checked = o.checkAll.value
+	document.querySelector(".main input")
+	    .setAttribute("earthquake-checkbox",
+			  o.checkAll.recv.id.toString()
+			 )
+
     }
     // For a given events, find the item number (starting at 0),
     // or null for the top entry box.

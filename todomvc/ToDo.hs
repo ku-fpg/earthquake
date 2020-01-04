@@ -53,6 +53,7 @@ main_ i = do
           { tasks = []
           , uid = 100
           , visibility = All
+          , checkAll = False
           }
 
     middleware $ runtime startA updateA
@@ -62,6 +63,7 @@ data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks
     , uid        :: Int         -- name supply for id
     , visibility :: Visibility  --
+    , checkAll   :: Bool
     } deriving (Show, Eq, Ord)
     
   
@@ -85,7 +87,8 @@ data TodoMsg
     | Add
     | TaskMsg (OneOf Task.TaskMsg)
     | DeleteComplete
-    | ChangeVisibility Visibility
+    | ChangeVisibility Visibility -- The router uses this
+    | CheckAll Bool
 
 instance Widget ToDo where
   type Msg ToDo = TodoMsg
@@ -100,6 +103,7 @@ instance Widget ToDo where
     , ( "createOnEnter", CreateOnEnter <$> recv )
     , ( "deletecomplete", wait DeleteComplete )
     , ( "router"       , (ChangeVisibility . read . unpack) <$> recv)
+    , ( "checkAll"     , CheckAll <$> view checkAll)
     ]
 
 instance ApplicativeUpdate ToDo where
@@ -119,4 +123,7 @@ instance ApplicativeUpdate ToDo where
     { tasks = Prelude.filter (not . Task.isComplete) tasks
     }
   updateA (ChangeVisibility v) todo = pure $ todo { visibility = v }
-
+  updateA (CheckAll t) todo@ToDo{..} = pure $ todo
+    { checkAll = t
+    , tasks = [ task { Task.completed = t } | task <- tasks ]
+    }  
