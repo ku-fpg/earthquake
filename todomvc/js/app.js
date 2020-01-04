@@ -30,6 +30,8 @@
 	    completed == 0?"none":null;
 	document.querySelector(".footer").style.display =
 	    items == 0?"none":null;
+	document.querySelector(".main").style.display =
+	    items == 0?"none":null;
 	document.querySelector(".todo-count").innerHTML =
 	    "<strong>" + left + "<strong> item" + (left == 1?"":"s") + " left"
 	_.map(document.querySelectorAll(".filters a"),i => {
