@@ -17,9 +17,18 @@
                 </script>
           <script type="text/template" id="todos-list-template">
           <ul class="todo-list">
-          <% _.each(tasks, (i, ix) => { %>
-            <li data-item="<%= ix %>">
-              <div class="view">
+          <% _.each(tasks, (i, ix) => { 
+	    let hidden = false;
+	    switch (visibility) {
+	    case "Active":
+		hidden = i.completed.value;
+		break;
+	    case "Completed":
+		hidden = !i.completed.value;
+		break;		
+	    } %>
+            <li data-item="<%= ix %>" class="<%= hidden?"hidden":"" %>">
+   	    <div class="view">
  	        <input class="toggle" type="checkbox"
 		  <%= i.completed.value?"checked":"" %>
 	          earthquake-checkbox="<%= i.completed.recv.id %>"

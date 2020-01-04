@@ -19,7 +19,7 @@
 	let tmpl = document.querySelector('#todos-list-template').innerHTML;
 	let el = document.querySelector('#todos-list');
 	// Brute force the list
-	el.innerHTML = _.template(tmpl)({tasks:o.tasks});
+	el.innerHTML = _.template(tmpl)({tasks:o.tasks,visibility:o.visibility});
 	// Update other features
 	let items = o.tasks.length;
 	let left  = _.filter(o.tasks,(i) => !i.completed.value).length;
