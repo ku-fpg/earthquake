@@ -22,7 +22,7 @@
 	el.innerHTML = _.template(tmpl)({tasks:o.tasks});
 	// Update other features
 	let items = o.tasks.length;
-	let left  = _.filter(o.tasks,(i) => !i.complete).length;
+	let left  = _.filter(o.tasks,(i) => !i.completed.value).length;
 	let completed = items - left
 	document.querySelector(".clear-completed")
 	    .setAttribute("earthquake-clickbox",o.deletecomplete.id);

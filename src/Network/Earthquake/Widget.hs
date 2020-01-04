@@ -116,10 +116,12 @@ instance Widget Bool where
 tag :: String -> Remote msg
 tag = send . pack
 
+-- NOTES: I don't like the way that the recv is includes
+-- a duplication of the type.
 primitive :: (ToJSON m, ToResponse m) => Text -> m -> Remote m
 primitive txt n = object 
       [ ("type"  , send txt)  -- type gives the type name
       , ("value" , send n)   -- the outgoing value
-      , ("event" , recv)     -- the event reply
+      , ("recv"  , recv)     -- the event reply
       ]  
 

@@ -45,7 +45,7 @@ instance Widget Task where
   view task@Task{..} = object
       [ ("type"        , tag "Task" )
       , ("description" , send description )
-      , ("complete"    , send completed )
+      , ("completed"   , Completed <$> view completed )
       , ("edits"       , send edits )
       , ("id"          , send id )
         -- inputs
@@ -53,7 +53,6 @@ instance Widget Task where
       , ("edit"        , Edit <$> recv )
       , ("cancel"      , wait Cancel )
       , ("commit"      , wait Commit )
-      , ("completed"   , Completed <$> recv )
       , ("delete"      , wait Delete )
       ]
   view NoTask = object [("type" , tag "NoTask")]
