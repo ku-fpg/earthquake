@@ -28,7 +28,7 @@
 		break;		
 	    } %>
             <li data-item="<%= ix %>" class="<%= hidden?"hidden":"" %>">
-   	    <div class="view">
+   	      <div class="view">
  	        <input class="toggle" type="checkbox"
 		  <%= i.completed.value?"checked":"" %>
 	          earthquake-checkbox="<%= i.completed.recv.id %>"
@@ -38,7 +38,10 @@
 	          earthquake-clickbox="<%= i.delete.id %>"	
 		></button>
               </div>
-              <input class="edit" value="<%= _.escape(i.description) %>">
+		  <input class="edit"
+	                 value="<%= _.escape(i.description) %>"
+	                 earthquake-value="<%= _.escape(i.description) %>"
+	                 earthquake-textbox="<%= i.edit.id %>">
             </li>
 				    
           <% }); %>

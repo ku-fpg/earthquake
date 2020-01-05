@@ -109,6 +109,20 @@
 		el.value = "";
 	    }	    
 	})
+	jsb.on("keydown","li.editing > input[earthquake-textbox]",(e,el) => {
+	    console.log("keydown",el,e,e.keyCode);
+	    if (e.keyCode == 13) {
+		jsb.event({id:parseInt(el.getAttribute('earthquake-textbox')),		
+			   value:el.value,
+			   tick:jsb.tick});
+		el.parentNode.classList.remove("editing");
+	    }
+	    if (e.keyCode == 27) {
+		// Restore value and edit status
+		el.value = el.getAttribute('earthquake-value')
+		el.parentNode.classList.remove("editing");
+	    }
+	})
 	jsb.on("click","input[earthquake-checkbox]",(e,el) => {
 	    jsb.event({id:parseInt(el.getAttribute('earthquake-checkbox')),
 		       value:el.checked,
@@ -122,7 +136,10 @@
 		      })
 	})
 	jsb.on("dblclick","li[data-item]",(e,el) => {
-	    console.log('dblclick',e,el);
+	    // We enable this editbox locally.
+	    // Any server-side changes will
+	    // revert this edit without saving.
+	    el.classList.add("editing");
 	})
     })
     
