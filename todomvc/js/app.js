@@ -69,7 +69,21 @@
     jsb.click = (e) => {
 	console.log("click",e);
     }
-  
+
+    // Add an event listener that runs down the
+    // target's path, to find the first selector match.
+    jsb.addEvent = (eventName,selector,callback) => {
+	document
+	    .querySelector('body')
+	    .addEventListener(eventName,(e) => {
+		let el = _.find(e.path,(i) =>
+			       typeof(i.matches) == "function" &&
+			       i.matches(selector));
+		el && callback(e,el);
+		event.preventDefault();
+	    }, false)
+    }
+    
     // Generic for debugging. Will need to encapsulate.
     document.addEventListener("DOMContentLoaded",() => {
 	console.log("DOM Loaded");
