@@ -115,7 +115,7 @@
 		       tick:jsb.tick
 		      })
 	})
-	jsb.on("click","input[earthquake-clickboxbox]",(e,el) => {
+	jsb.on("click","button[earthquake-clickbox]",(e,el) => {
 	    jsb.event({id:parseInt(el.getAttribute('earthquake-clickbox')),
 		       value:[],
 		       tick:jsb.tick
