@@ -72,7 +72,7 @@
 
     // Add an event listener that runs down the
     // target's path, to find the first selector match.
-    jsb.addEvent = (eventName,selector,callback) => {
+    jsb.on = (eventName,selector,callback) => {
 	document
 	    .querySelector('body')
 	    .addEventListener(eventName,(e) => {
@@ -101,7 +101,7 @@
 	    }
 	    route && jsb.event({id:jsb.view.router.id, value: route, tick:jsb.tick})
 	})
-	jsb.addEvent("keydown","input.new-todo",(e,el) => {
+	jsb.on("keydown","input.new-todo",(e,el) => {
 	    if (e.keyCode == 13) {
 		jsb.event({id:jsb.view.createOnEnter.id,
 			   value:el.value,
@@ -109,19 +109,19 @@
 		el.value = "";
 	    }	    
 	})
-	jsb.addEvent("click","input[earthquake-checkbox]",(e,el) => {
+	jsb.on("click","input[earthquake-checkbox]",(e,el) => {
 	    jsb.event({id:parseInt(el.getAttribute('earthquake-checkbox')),
 		       value:el.checked,
 		       tick:jsb.tick
 		      })
 	})
-	jsb.addEvent("click","input[earthquake-clickboxbox]",(e,el) => {
+	jsb.on("click","input[earthquake-clickboxbox]",(e,el) => {
 	    jsb.event({id:parseInt(el.getAttribute('earthquake-clickbox')),
 		       value:[],
 		       tick:jsb.tick
 		      })
 	})
-	jsb.addEvent("dblclick","li[data-item]",(e,el) => {
+	jsb.on("dblclick","li[data-item]",(e,el) => {
 	    console.log('dblclick',e,el);
 	})
     })
