@@ -46,8 +46,9 @@ instance Widget Task where
 
 updateTask :: TaskMsg -> Task -> Maybe Task
 updateTask (Edit raw) m
-  | T.null raw = pure m
-  | otherwise = pure $ m { description = raw }
+    | T.null desc = Nothing
+    | otherwise = pure $ m { description = desc }
+  where desc = T.strip raw
 updateTask (Completed bool) m = pure $ m { completed = bool }
 updateTask Delete m = Nothing
 
