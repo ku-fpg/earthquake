@@ -77,21 +77,15 @@
 	    .querySelector('body')
 	    .addEventListener(eventName,(e) => {
 		let el = _.find(e.path,(i) =>
-			       typeof(i.matches) == "function" &&
-			       i.matches(selector));
+				typeof(i.matches) == "function" &&
+				i.matches(selector));
 		el && callback(e,el);
-		event.preventDefault();
 	    }, false)
     }
     
     // Generic for debugging. Will need to encapsulate.
     document.addEventListener("DOMContentLoaded",() => {
 	console.log("DOM Loaded");
-	document.querySelector('.new-todo').addEventListener("keydown",(e) => {
-	    if (e.keyCode == 13) {
-		jsb.enter(null);
-	    }
-	});
 	window.addEventListener("hashchange",(e) => {
 	    let route = null;
 	    switch (window.location.hash) {
@@ -106,27 +100,29 @@
 	    }
 	    route && jsb.event({id:jsb.view.router.id, value: route, tick:jsb.tick})
 	})
+	jsb.addEvent("keydown","input.new-todo",(e,el) => {
+	    if (e.keyCode == 13) {
+		jsb.event({id:jsb.view.createOnEnter.id,
+			   value:el.value,
+			   tick:jsb.tick});
+		el.value = "";
+	    }	    
+	})
 	jsb.addEvent("click","input[earthquake-checkbox]",(e,el) => {
 	    jsb.event({id:parseInt(el.getAttribute('earthquake-checkbox')),
 		       value:el.checked,
 		       tick:jsb.tick
 		      })
 	})
-	document.querySelector('body').addEventListener("click",(e) => {
-	    jsb.click_e = e;
-	    let checkbox = _.filter(e.path,(i) => i.getAttribute && i.getAttribute('earthquake-checkbox'))
-	    if (checkbox[0]) {
-	    }
-	    let clickbox = _.filter(e.path,(i) => i.getAttribute && i.getAttribute('earthquake-clickbox'))
-	    if (clickbox[0]) {
-		jsb.event({id:parseInt(clickbox[0].
-				       attributes['earthquake-clickbox'].
-				       value),
-			   value:[],
-			   tick:jsb.tick
-			  })
-	    }
-	});
+	jsb.addEvent("click","input[earthquake-clickboxbox]",(e,el) => {
+	    jsb.event({id:parseInt(el.getAttribute('earthquake-clickbox')),
+		       value:[],
+		       tick:jsb.tick
+		      })
+	})
+	jsb.addEvent("dblclick","li[data-item]",(e,el) => {
+	    console.log('dblclick',e,el);
+	})
     })
     
     jsb.renders = {};
