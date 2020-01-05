@@ -79,7 +79,8 @@
 		let el = _.find(e.path,(i) =>
 				typeof(i.matches) == "function" &&
 				i.matches(selector));
-		el && callback(e,el);
+		// We bind this to the element, aka jquery.
+		el && callback.call(el,e,el);
 	    }, false)
     }
     
