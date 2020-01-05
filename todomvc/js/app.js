@@ -11,11 +11,10 @@
     jsb.render = (t,o) => {
         jsb.tick = t;
         jsb.view = o;
-        console.log(o);
 	  // For debugging
 //	  jsb.renders.generic(document.querySelector('#target'),o);
 	  // Main rendering
-	document.querySelector('#raw').innerHTML = "<code>" + JSON.stringify(o) + "</code>"
+//	document.querySelector('#raw').innerHTML = "<code>" + JSON.stringify(o) + "</code>"
 	let tmpl = document.querySelector('#todos-list-template').innerHTML;
 	let el = document.querySelector('#todos-list');
 	// Brute force the list
@@ -76,6 +75,7 @@
 	document
 	    .querySelector('body')
 	    .addEventListener(eventName,(e) => {
+		console.log("on",eventName,selector,e);
 		let el = _.find(e.path,(i) =>
 				typeof(i.matches) == "function" &&
 				i.matches(selector));
