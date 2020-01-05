@@ -106,16 +106,16 @@
 	    }
 	    route && jsb.event({id:jsb.view.router.id, value: route, tick:jsb.tick})
 	})
+	jsb.addEvent("click","input[earthquake-checkbox]",(e,el) => {
+	    jsb.event({id:parseInt(el.getAttribute('earthquake-checkbox')),
+		       value:el.checked,
+		       tick:jsb.tick
+		      })
+	})
 	document.querySelector('body').addEventListener("click",(e) => {
 	    jsb.click_e = e;
 	    let checkbox = _.filter(e.path,(i) => i.getAttribute && i.getAttribute('earthquake-checkbox'))
 	    if (checkbox[0]) {
-		jsb.event({id:parseInt(checkbox[0].
-				       attributes['earthquake-checkbox'].
-				       value),
-			   value:checkbox[0].checked,
-			   tick:jsb.tick
-			  })
 	    }
 	    let clickbox = _.filter(e.path,(i) => i.getAttribute && i.getAttribute('earthquake-clickbox'))
 	    if (clickbox[0]) {
