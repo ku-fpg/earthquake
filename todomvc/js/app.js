@@ -123,6 +123,12 @@
 		el.parentNode.classList.remove("editing");
 	    }
 	})
+	jsb.on("focusout","li.editing > input[earthquake-textbox]",(e,el) => {
+	    jsb.event({id:parseInt(el.getAttribute('earthquake-textbox')),		
+		       value:el.value,
+		       tick:jsb.tick});
+	    el.parentNode.classList.remove("editing");
+	})
 	jsb.on("click","input[earthquake-checkbox]",(e,el) => {
 	    jsb.event({id:parseInt(el.getAttribute('earthquake-checkbox')),
 		       value:el.checked,
