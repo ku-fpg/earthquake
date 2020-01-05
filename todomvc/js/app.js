@@ -140,6 +140,9 @@
 	    // Any server-side changes will
 	    // revert this edit without saving.
 	    el.classList.add("editing");
+	    let input = el.querySelector("input[earthquake-textbox]")
+	    input.focus();
+	    input.setSelectionRange(input.value.length,input.value.length)
 	})
     })
     
