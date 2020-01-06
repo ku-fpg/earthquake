@@ -50,20 +50,19 @@ instance Show (Response msg) where
   show (ResponseValue t) = unpack t
 
 class ToResponse msg where
-  recvPair :: Pair msg
---  recv :: Remote msg
+  recv :: Remote msg
 
 instance ToResponse () where
-  recvPair = ("unit", response "unit")
+  recv = response "unit"
 
 instance ToResponse Double where
-  recvPair = ("double", response "double")
+  recv = response "double"
 
 instance ToResponse Text where
-  recvPair = ("text", response "text")
+  recv = response "text"
 
 instance ToResponse Bool where
-  recvPair = ("bool", response "bool")
+  recv = response "bool"
 
 -- | A response event, which is id number, and value
 data ResponseEvent where
@@ -77,9 +76,6 @@ instance FromJSON ResponseEvent where
 
 ------------------------------------------------------------------------------
 -- Builders  
-
-recv :: ToResponse msg => Remote msg
-recv = snd recvPair
 
 object :: [Pair msg] -> Remote msg
 object = Object
