@@ -13,10 +13,12 @@
         jsb.tick = t;
         jsb.view = o;
 	  // For debugging
-//	  jsb.renders.generic(document.querySelector('#target'),o);
+//     jsb.json(document.querySelector('#target'),o);
 	  // Main rendering
 	document.querySelector('#raw').innerHTML = "<code><pre>" +
-	    JSON.stringify(o,null,4).replace(/X{\s*"/g,"{ \"") + "</pre></code>"
+	    JSON.stringify(o,null,2)
+	    .replace(/(?<!:\s*){\s*"/g,"{ \"")
+	    + "</pre></code>"
 	let tmpl = document.querySelector('#todos-list-template').innerHTML;
 	let el = document.querySelector('#todos-list');
 	// Brute force the list
@@ -259,6 +261,48 @@
         el.querySelector('p.the-text').textContent = o.value;
         el.querySelector('progress.progress').setAttribute('value',o.value);
 	el.querySelector('input.slider').setAttribute("data-event-id",o.event);
+    }
+    jsb.json = (el,o) => {
+//	el.innerHTML = "<code>" + JSON.stringify(o) + "</code>"
+	//	return;
+/*	
+	let table = document.createElement("dl");
+	el.insertAdjacentElement('beforeend',table);
+	_.each(o,(val,ix) => {
+	    let dt = document.createElement("dt");
+    	    table.insertAdjacentElement('beforeend',dt);
+	    dt.innerText = ix;
+	    let dd = document.createElement("dd");
+    	    table.insertAdjacentElement('beforeend',dd);
+	    dd.innerText = JSON.stringify(val);
+	})
+
+*/
+
+	let table = document.createElement("table");
+	table.border = 1;
+	table.width="100%";
+	el.insertAdjacentElement('beforeend',table);
+	let body = document.createElement("body");
+	table.insertAdjacentElement('beforeend',body);
+	let row = document.createElement("tr");
+	body.insertAdjacentElement('beforeend',row);
+	_.forEach(["attribute","value","action"],(i) => {
+	    let th = document.createElement("th");
+	    row.insertAdjacentElement('beforeend',th);
+	    th.innerText = i;
+	})
+	_.each(o,(val,ix) => {
+	    row = document.createElement("tr");
+	    body.insertAdjacentElement('beforeend',row);
+	    let td = document.createElement("th");
+	    row.insertAdjacentElement('beforeend',td);
+	    td.innerText = ix;
+	    td.align = "right";
+	    td = document.createElement("td");
+	    row.insertAdjacentElement('beforeend',td);
+	    td.innerText = JSON.stringify(val);
+	});
     }
     
 })(window);
