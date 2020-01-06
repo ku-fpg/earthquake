@@ -18,8 +18,8 @@ data Task = Task
     }
   deriving (Show, Eq, Ord)
 
-newTask :: Text -> Int -> Task
-newTask desc id = Task
+newTask :: Text -> Task
+newTask desc = Task
     { description = desc
     , completed = False
     }
@@ -36,12 +36,13 @@ instance Widget Task where
   type Msg Task = TaskMsg
   view task@Task{..} = object
       [ ("type"        , tag "Task" )
+        -- outputs
       , ("description" , send description )
-        -- input/output
-      , ("completed"   , Completed <$> view completed )
         -- inputs
       , ("edit"        , Edit <$> recv )
       , ("delete"      , wait Delete )
+        -- input/output
+      , ("completed"   , Completed <$> view completed )
       ]
 
 updateTask :: TaskMsg -> Task -> Maybe Task

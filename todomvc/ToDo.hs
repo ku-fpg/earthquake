@@ -5,7 +5,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE InstanceSigs #-}
 
--- classic ToDo example. Based on the Elm version.
+-- classic ToDo example. Based on the Elm and backbone.js versions.
 
 module Main where
 
@@ -51,7 +51,6 @@ main_ i = do
       
     let startA = pure $ ToDo
           { tasks = []
-          , uid = 100
           , visibility = All
           , checkAll = False
           }
@@ -61,7 +60,6 @@ main_ i = do
 
 data ToDo = ToDo
     { tasks      :: [Task]      -- List of the TODO tasks
-    , uid        :: Int         -- name supply for id
     , visibility :: Visibility  --
     , checkAll   :: Bool
     } deriving (Show, Eq, Ord)
@@ -70,21 +68,8 @@ data ToDo = ToDo
 data Visibility = All | Completed | Active
   deriving (Show, Read, Eq, Ord)
 
-{-
-type Msg
-    = NoOp
-    | UpdateField String
-    | Add
-    | UpdateTask ( Int, Todo.Task.Msg )
-    | DeleteComplete
-    | CheckAll Bool
-    | ChangeVisibility String
--}
-
 data TodoMsg
-    = UpdateField Text
-    | CreateOnEnter Text
-    | Add
+    = CreateOnEnter Text
     | TaskMsg (OneOf Task.TaskMsg)
     | DeleteComplete
     | ChangeVisibility Visibility -- The router uses this
@@ -95,15 +80,16 @@ instance Widget ToDo where
   
   view :: ToDo -> Remote TodoMsg
   view todo@ToDo{..} = object
-    [ ( "type"        , tag "ToDo" )
-    , ( "tasks"       , TaskMsg <$> view tasks )
-    , ( "uid"         , send uid )
-    , ( "visibility"  , send $ show $ visibility )
+    [ ( "type"          , tag "ToDo" )
+      -- The output
+    , ( "visibility"    , send $ show $ visibility )
       -- The input
-    , ( "createOnEnter", CreateOnEnter <$> recv )
+    , ( "createOnEnter" , CreateOnEnter <$> recv )
     , ( "deletecomplete", wait DeleteComplete )
-    , ( "router"       , (ChangeVisibility . read . unpack) <$> recv)
-    , ( "checkAll"     , CheckAll <$> view checkAll)
+    , ( "router"        , (ChangeVisibility . read . unpack) <$> recv)
+     -- The input/output
+    , ( "checkAll"      , CheckAll <$> view checkAll)
+    , ( "tasks"         , TaskMsg <$> view tasks )
     ]
 
 instance ApplicativeUpdate ToDo where
@@ -116,8 +102,7 @@ instance ApplicativeUpdate ToDo where
           newModel
             | T.all isSpace description = pure todo
             | otherwise = pure $ todo
-               { uid = succ uid
-               , tasks = tasks ++ [ Task.newTask description uid ]
+               { tasks = tasks ++ [ Task.newTask description ]
                }
   updateA DeleteComplete todo@ToDo{..} = pure $ todo
     { tasks = Prelude.filter (not . Task.isComplete) tasks
