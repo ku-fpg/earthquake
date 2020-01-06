@@ -6,7 +6,7 @@
 module Network.Earthquake.Remote
   ( Remote
   , Pair
-  , Response
+  , ResponseType
   , ToResponse
   , object
   , array
@@ -32,7 +32,7 @@ import Prelude hiding (id)
 -- | A 'Remote' functor that returns a message when evaluated.
 data Remote msg where
   Send       :: ToJSON a => a -> Remote msg
-  Response   :: FromJSON a => Text -> Remote a
+  Response   :: FromJSON a => ResponseType -> Remote a
   MapRemote  :: (a -> b) -> Remote a -> Remote b
   Object     :: [Pair msg] -> Remote msg
   Array      :: [Remote msg] -> Remote msg  
@@ -42,27 +42,33 @@ instance Functor Remote where
 
 type Pair msg = (Text, Remote msg)
 
--- | The types of response messages
-data Response msg where
-  ResponseValue :: FromJSON msg => Text -> Response msg
+data ResponseType
+  = ResponseUnit
+  | ResponseDouble
+  | ResponseText
+  | ResponseBool
+  deriving (Eq, Ord, Show)
 
-instance Show (Response msg) where
-  show (ResponseValue t) = unpack t
+instance ToJSON ResponseType where
+  toJSON ResponseUnit = "unit"
+  toJSON ResponseDouble = "double"
+  toJSON ResponseText = "text"
+  toJSON ResponseBool = "bool"
 
 class ToResponse msg where
   recv :: Remote msg
 
 instance ToResponse () where
-  recv = response "unit"
+  recv = response ResponseUnit
 
 instance ToResponse Double where
-  recv = response "double"
+  recv = response ResponseDouble
 
 instance ToResponse Text where
-  recv = response "text"
+  recv = response ResponseText
 
 instance ToResponse Bool where
-  recv = response "bool"
+  recv = response ResponseBool
 
 -- | A response event, which is id number, and value
 data ResponseEvent where
@@ -89,7 +95,7 @@ wait a = fmap (\ () -> a) recv
 send :: ToJSON a => a -> Remote msg
 send = Send
 
-response :: FromJSON msg => Text -> Remote msg
+response :: FromJSON msg => ResponseType -> Remote msg
 response = Response
 
 ------------------------------------------------------------------------------
@@ -100,8 +106,8 @@ response = Response
 -- otherwise we would use Value here.
 
 data SendJSON
- = SendValue Value    -- a value to send
- | RecvValue Int Text -- an id and type for a recv
+ = SendValue Value              -- a value to send
+ | RecvValue Int ResponseType   -- an id and type for a recv
  | SendObject [(Text,SendJSON)]
  | SendArray [SendJSON]
  deriving (Show)
@@ -132,7 +138,7 @@ sendRemote' (Array rs) = SendArray <$> sequenceA
 
 -- meta information about types of responses
 -- result starts at id #0, and is consecutive.
-metaRemote :: SendJSON -> [Text]
+metaRemote :: SendJSON -> [ResponseType]
 metaRemote (SendValue v) = []
 metaRemote (RecvValue i t) = [t]
 metaRemote (SendObject pairs) = concatMap (metaRemote . snd) pairs
