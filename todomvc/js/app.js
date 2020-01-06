@@ -15,7 +15,8 @@
 	  // For debugging
 //	  jsb.renders.generic(document.querySelector('#target'),o);
 	  // Main rendering
-//	document.querySelector('#raw').innerHTML = "<code>" + JSON.stringify(o) + "</code>"
+	document.querySelector('#raw').innerHTML = "<code><pre>" +
+	    JSON.stringify(o,null,4).replace(/{\s*"/,"{ \"") + "</pre></code>"
 	let tmpl = document.querySelector('#todos-list-template').innerHTML;
 	let el = document.querySelector('#todos-list');
 	// Brute force the list
