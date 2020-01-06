@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Template • Earthquake</title>
+  </head>
+  <body>
+    <script type="text/template" id="recv-template">
+      <% _.each(meta, (i, ix) => { 
+        let button = i;
+        if (i == "bool") button = "false";
+       %>      
+      <tr>
+	<td>
+	  <input type="button" 
+		 class="<%=i%>-button" 
+		 value="<%=button%> #<%=ix%>" 
+	      <%= i=="double"?"disabled":""%>></input>
+	</td>
+	<td>
+	  <code>
+	    <% switch (i) { 
+	       case "unit": %>jsb.unit(<%=ix%>)
+	    <% break;
+	       case "text": %>jsb.text(<%=ix%>,<span class="theText">""</span>)
+	    <% break;
+	       case "bool": %>jsb.bool(<%=ix%>,false)
+	       <input type="button" value="true #<%=ix%>"></input>
+	       jsb.bool(<%=ix%>,true)
+	    <% break;
+	       case "double": %>jsb.double(<%=ix%>,<span class="theDouble">NaN</span>)
+	    <% break; %>
+	    <% } %>
+	  </code>
+	</td>
+      </tr>
+      <% }) %>
+    </script>
+    <fieldset>
+      <legend>Earthquake Debugging Mode</legend>
+      <table width="100%">
+	<tr>
+	  <td width="60%" valign="top">
+	    <fieldset>
+	    <legend>Payload</legend>
+	    <input id="payload" type="text" value="" style="width:100%" autofocus></input>
+	    </fieldset>
+	    <table id="recv">
+	      <tr>
+		<td>
+		  <input type="button" value="#0"></input>
+		</td>
+		<td>
+		  <code>jsb.click(0)</code>
+		</td>
+	      </tr>
+	      <tr>
+		<td>
+		  <input type="button" value="#1"></input>
+		</td>
+		<td>
+		  <code>jsb.checkbox(1,false)</code>
+		  <input type="button" value="#1"></input>
+		  <code>jsb.checkbox(1,true)</code>
+		</td>
+	      </tr>
+	      <tr>
+		<td>
+		  <input type="button" value="#1"></input>
+		</td>
+		<td>
+		  <code>jsb.checkbox(1,false)</code>
+		</td>
+	      </tr>
+	      <tr>
+		<td>
+		  <input type="button" value="#0"></input>
+		</td>
+		<td>
+		  <code>jsb.text(0,"Hello")</code>
+		</td>
+	      </tr>
+	      <tr>
+		<td>
+		  <input type="button" value="#0"></input>
+		</td>
+		<td>
+		  <code>jsb.click(0)</code>
+		</td>
+	      </tr>
+	    </table>
+	  </td>
+	  <td width="40%">
+	    <textarea readonly style="white-space: pre-wrap; width: 100%; height: 80vh"  id="json">
+	    </textarea>
+	  </td>
+	</tr>
+      </table>
+    </fieldset>
+    <div id="target"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js"></script>
+    <script>
+      window.jsb = {ws: new WebSocket('ws://' + location.host + '/')};
+      jsb.ws.onmessage = (evt) => eval(evt.data);
+      jsb.debug = true;
+      jsb.tick = 0;
+      jsb.render = (t,o,m) => {
+        console.log(t,o,m);
+        let json = JSON.stringify(o,null,2)
+	    .replace(/(?<!:\s*){\s*"/g,"{ \"");
+	document.querySelector('#json').innerHTML = "";
+	document.querySelector('#json').append(json);
+	document.querySelector('#recv').innerHTML = _.template
+            (document.querySelector('#recv-template').innerHTML)
+	    ({meta:m.concat(["double"])});
+	jsb.on("input","#payload",(e) => {
+          console.log("keypress",e.code);
+          let text = document.querySelector('#payload').value;
+          let f = parseFloat(text);
+          document
+            .querySelectorAll('.theText')
+            .forEach((o) => { 
+               o.innerText = JSON.stringify(text);
+            });
+          document
+            .querySelectorAll('.theDouble')
+            .forEach((o) => { 
+               o.innerText = f.toString();
+            });
+          document
+            .querySelectorAll('.double-button')
+            .forEach((o) => { 
+               o.disabled = isNaN(f);
+            });
+        })
+      }
+      // Add an event listener that runs down the
+      // target's path, to find the first selector match.
+      jsb.on = (eventName,selector,callback) => {
+	  document
+	    .querySelector('body')
+	    .addEventListener(eventName,(e) => {
+		let el = _.find(e.path,(i) =>
+				typeof(i.matches) == "function" &&
+				i.matches(selector));
+		// We bind this to the element, aka jquery.
+		el && callback.call(el,e,el);
+	    }, false)
+      }
+    </script>
+  </body>
+</html>

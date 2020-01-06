@@ -36,6 +36,7 @@ main_ i = do
   scotty i $ do
    
     get "/" $ file $ dataDir ++ "/todomvc/index.html"
+    get "/earthquake.html" $ file $ dataDir ++ "/todomvc/earthquake.html"
 
     sequence_
       [ get (fromString f) $ file $ dataDir ++ f
