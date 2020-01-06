@@ -42,9 +42,11 @@ jsbRuntime m u e = do
       render theModel theTick = do
         let theView = view theModel
         let s0 = 0
-        let (json,_) = runState (sendRemote theView) 0
+        let json = sendRemote theView
+        let meta = metaRemote json 
         print ("json",json)
-        sendA e $ command $ call "jsb.render" [value (0::Int),value json]
+        sendA e $ command $ call "jsb.render"
+          [value (0::Int),value json,value meta]
         wait theModel theTick theView
 
       wait :: Widget model

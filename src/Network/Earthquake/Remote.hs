@@ -14,14 +14,15 @@ module Network.Earthquake.Remote
   , send
   , recv
   , sendRemote
+  , metaRemote
   , recvRemote
   , ResponseEvent
   , response
   ) where
 
 import Control.Applicative         ((<|>))
-import Control.Monad.Trans.State   (State,put,get)
-import Data.Aeson                  (Value,ToJSON,toJSON,fromJSON,FromJSON(..),withObject,(.:), (.=), Result(..))
+import Control.Monad.Trans.State   (State,put,get,evalState)
+import Data.Aeson                  (Value,ToJSON(..),toJSON,fromJSON,FromJSON(..),withObject,(.:), (.=), Result(..))
 import qualified Data.Aeson as A
 import Data.Maybe(isJust)
 import Data.Text(Text, unpack)
@@ -49,19 +50,20 @@ instance Show (Response msg) where
   show (ResponseValue t) = unpack t
 
 class ToResponse msg where
-  recv :: Remote msg
+  recvPair :: Pair msg
+--  recv :: Remote msg
 
 instance ToResponse () where
-  recv = response "unit"
+  recvPair = ("unit", response "unit")
 
 instance ToResponse Double where
-  recv = response "double"
+  recvPair = ("double", response "double")
 
 instance ToResponse Text where
-  recv = response "text"
+  recvPair = ("text", response "text")
 
 instance ToResponse Bool where
-  recv = response "bool"
+  recvPair = ("bool", response "bool")
 
 -- | A response event, which is id number, and value
 data ResponseEvent where
@@ -75,6 +77,9 @@ instance FromJSON ResponseEvent where
 
 ------------------------------------------------------------------------------
 -- Builders  
+
+recv :: ToResponse msg => Remote msg
+recv = snd recvPair
 
 object :: [Pair msg] -> Remote msg
 object = Object
@@ -94,20 +99,51 @@ response = Response
 ------------------------------------------------------------------------------
 -- Sending
 
-sendRemote :: Remote msg -> State Int Value
-sendRemote (Send a) = pure $ toJSON a
-sendRemote (Response r) = do
-  id <- toJSON <$> alloc
-  return $ A.object
-    [ ("type" .= r)
-    , ("id"   .= id)
+-- JSON-like structure for representing sending.
+-- We want to keep hold of the types of the RecvValue,
+-- otherwise we would use Value here.
+
+data SendJSON
+ = SendValue Value    -- a value to send
+ | RecvValue Int Text -- an id and type for a recv
+ | SendObject [(Text,SendJSON)]
+ | SendArray [SendJSON]
+ deriving (Show)
+
+
+instance ToJSON SendJSON where
+  toJSON (SendValue v) = v
+  toJSON (RecvValue i t) = A.object
+    [ ("type" .= t)
+    , ("id"   .= i)
     ]
-sendRemote (MapRemote _ r) = sendRemote r
-sendRemote (Object pairs) = A.object <$> sequenceA
-  [ (lbl .=) <$> sendRemote r
+  toJSON (SendObject pairs) = A.object
+    [ (lbl .= r) | (lbl,r) <- pairs ]
+  toJSON (SendArray rs) = toJSON (toJSON <$> rs)
+  
+sendRemote :: Remote msg -> SendJSON
+sendRemote = flip evalState 0 . sendRemote'
+
+sendRemote' :: Remote msg -> State Int SendJSON
+sendRemote' (Send a) = pure $ SendValue $ toJSON a
+sendRemote' (Response r) = do
+  i <- alloc
+  return $ RecvValue i r
+sendRemote' (MapRemote _ r) = sendRemote' r
+sendRemote' (Object pairs) = SendObject <$> sequenceA
+  [ (\ r' -> (lbl,r')) <$> sendRemote' r 
   | (lbl, r) <- pairs
   ]
-sendRemote (Array rs) = toJSON <$> sequenceA (sendRemote <$> rs)
+sendRemote' (Array rs) = SendArray <$> sequenceA
+  (sendRemote' <$> rs)
+
+-- meta information about types of responses
+-- result starts at id #0, and is consecutive.
+metaRemote :: SendJSON -> [Text]
+metaRemote (SendValue v) = []
+metaRemote (RecvValue i t) = [t]
+metaRemote (SendObject pairs) = concatMap (metaRemote . snd) pairs
+metaRemote (SendArray rs) = concatMap metaRemote rs
 
 ------------------------------------------------------------------------------
 -- Response

@@ -8,7 +8,8 @@
     jsb.debug = true;
     jsb.tick = 0;
     jsb.uniq = 0;
-    jsb.render = (t,o) => {
+    jsb.render = (t,o,m) => {
+	console.log(m);
         jsb.tick = t;
         jsb.view = o;
 	  // For debugging
