@@ -31,17 +31,17 @@
    	      <div class="view">
  	        <input class="toggle" type="checkbox"
 		  <%= i.completed.value?"checked":"" %>
-	          earthquake-checkbox="<%= i.completed.recv.id %>"
+	          earthquake-checkbox="<%= i.completed.recv %>"
 		>
  	        <label><%= _.escape(i.description) %></label>
                 <button class="destroy"
-	          earthquake-clickbox="<%= i.delete.id %>"	
+	          earthquake-clickbox="<%= i.delete %>"	
 		></button>
               </div>
 		  <input class="edit"
 	                 value="<%= _.escape(i.description) %>"
 	                 earthquake-value="<%= _.escape(i.description) %>"
-	                 earthquake-textbox="<%= i.edit.id %>">
+	                 earthquake-textbox="<%= i.edit %>">
             </li>
 				    
           <% }); %>

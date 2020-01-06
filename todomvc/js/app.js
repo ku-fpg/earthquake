@@ -25,7 +25,7 @@
 	let left  = _.filter(o.tasks,(i) => !i.completed.value).length;
 	let completed = items - left
 	document.querySelector(".clear-completed")
-	    .setAttribute("earthquake-clickbox",o.deletecomplete.id);
+	    .setAttribute("earthquake-clickbox",o.deletecomplete);
 	document.querySelector(".clear-completed").style.display =
 	    completed == 0?"none":null;
 	document.querySelector(".footer").style.display =
@@ -44,7 +44,7 @@
 	document.querySelector(".main input").checked = o.checkAll.value
 	document.querySelector(".main input")
 	    .setAttribute("earthquake-checkbox",
-			  o.checkAll.recv.id.toString()
+			  o.checkAll.recv.toString()
 			 )
 
     }
@@ -63,7 +63,7 @@
     
     jsb.enter = (ix) => {
 	let value = document.querySelector('.new-todo');
-	jsb.event({id:jsb.view.createOnEnter.id,value:value.value,tick:jsb.tick});
+	jsb.event({id:jsb.view.createOnEnter,value:value.value,tick:jsb.tick});
 	value.value = "";
     }
     jsb.click = (e) => {
@@ -100,11 +100,11 @@
 		route = "Completed"; break;
 	    default:
 	    }
-	    route && jsb.event({id:jsb.view.router.id, value: route, tick:jsb.tick})
+	    route && jsb.event({id:jsb.view.router, value: route, tick:jsb.tick})
 	})
 	jsb.on("keydown","input.new-todo",(e,el) => {
 	    if (e.keyCode == 13) {
-		jsb.event({id:jsb.view.createOnEnter.id,
+		jsb.event({id:jsb.view.createOnEnter,
 			   value:el.value,
 			   tick:jsb.tick});
 		el.value = "";

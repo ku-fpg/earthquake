@@ -109,10 +109,7 @@ data SendJSON
 
 instance ToJSON SendJSON where
   toJSON (SendValue v) = v
-  toJSON (RecvValue i t) = A.object
-    [ ("type" .= t)
-    , ("id"   .= i)
-    ]
+  toJSON (RecvValue i t) = toJSON i
   toJSON (SendObject pairs) = A.object
     [ (lbl .= r) | (lbl,r) <- pairs ]
   toJSON (SendArray rs) = toJSON (toJSON <$> rs)
