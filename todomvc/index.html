@@ -5,16 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Template • TodoMVC</title>
     <link rel="stylesheet" href="/todomvc/node_modules/todomvc-app-css/index.css">
-    <!-- CSS overrides - remove if you don't need it -->
-    <link rel="stylesheet" href="/todomvc/css/app.css">
   </head>
   <body>
 
-          <script type="text/template" id="list-template">
-                   <ul>
-                      <% _.each(list, (i) => { %><li></li><% }); %>
-                   </ul>
-                </script>
           <script type="text/template" id="todos-list-template">
           <ul class="todo-list">
           <% _.each(tasks, (i, ix) => { 
@@ -48,24 +41,18 @@
         </ul>
                 </script>
 
-    <div id="raw"></div>
-    
     <section class="todoapp">
       <header class="header">
         <h1>todos</h1>
         <input class="new-todo" placeholder="What needs to be done?" autofocus>
       </header>
-      <!-- This section should be hidden by default and shown when there are todos -->
       <section class="main">
         <input id="toggle-all" class="toggle-all" type="checkbox">
         <label for="toggle-all">Mark all as complete</label>
 	<span id="todos-list"></a>
       </section>
-      <!-- This footer should hidden by default and shown when there are todos -->
       <footer class="footer">
-        <!-- This should be `0 items left` by default -->
         <span class="todo-count"><strong>0</strong> item left</span>
-        <!-- Remove this if you don't implement routing -->
         <ul class="filters">
           <li>
             <a class="selected" href="#/">All</a>
@@ -77,20 +64,17 @@
             <a href="#/completed">Completed</a>
           </li>
         </ul>
-        <!-- Hidden if no completed items are left ↓ -->
         <button class="clear-completed">Clear completed</button>
       </footer>
     </section>
     <footer class="info">
       <p>Double-click to edit a todo</p>
-      <!-- Change this out with your name and url ↓ -->
       <p>Created by <a href="http://todomvc.com">Andy Gill</a></p>
       <p>Clone of <a href="http://todomvc.com">TodoMVC</a>, based on Elm and backbone.js versions</p>
     </footer>
 
     <div id="target"></div>
     
-    <!-- Scripts here. Don't remove ↓ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js"></script>    
     <script src="/todomvc/js/app.js"></script>
   </body>
