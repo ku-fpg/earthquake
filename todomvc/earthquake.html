@@ -21,17 +21,17 @@
 	<td>
 	  <code>
 	    <% switch (i) { 
-	       case "unit": %>jsb.send(<%=ix%>)
+	       case "unit": %>jsb.event({id:<%=ix%>,value:[],tick:<span class="theTick">undefined</span>})
 	    <% break;
-	       case "text": %>jsb.send(<%=ix%>,<span class="theText">""</span>)
+	       case "text": %>jsb.event({id:<%=ix%>,value:<span class="theText">""</span>,tick:<span class="theTick">undefined</span>})
 	    <% break;
-	       case "bool": %>jsb.send(<%=ix%>,false)
+	       case "bool": %>jsb.event({id:<%=ix%>,value:false,tick:<span class="theTick">undefined</span>})
 	       <input type="button" 		 
 		      class="true-button" 
 		      value="true #<%=ix%>"></input>
-	       jsb.send(<%=ix%>,true)
+	       jsb.event({id:<%=ix%>,value:true,tick:<span class="theTick">undefined</span>})
 	    <% break;
-	       case "double": %>jsb.send(<%=ix%>,<span class="theDouble">NaN</span>)
+	       case "double": %>jsb.event({id:<%=ix%>,value:<span class="theDouble">NaN</span>,tick:<span class="theTick">undefined</span>})
 	    <% break; %>
 	    <% } %>
 	  </code>
@@ -54,7 +54,7 @@
 	  <td width="50%" valign="top">
 	    <fieldset>
 	    <legend>View</legend>
-	      Tick: <span id="theTick">0</span>
+	      Tick: <span class="theTick">undefined</span>
 	    </fieldset>
 	    <textarea readonly style="white-space: pre-wrap; width: 100%; height: 80vh"  id="json">
 	    </textarea>
@@ -75,11 +75,13 @@
 	    .replace(/(?<!:\s*){\s*"/g,"{ \"");
 	document.querySelector('#json').innerHTML = "";
 	document.querySelector('#json').append(json);
-	document.querySelector('#theTick').innerText = t.toString();
 	document.querySelector('#recv').innerHTML = _.template
             (document.querySelector('#recv-template').innerHTML)
 	    ({meta:m.concat(["double"])});
         document.querySelector('#payload').value = "";
+	document.querySelectorAll('.theTick').forEach((el) => {
+          el.innerText = t.toString();
+        })
       }
       jsb.send = (id,value,tick) => {
         console.log("send",id,value,tick);
