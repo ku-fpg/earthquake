@@ -77,7 +77,7 @@
 	document.querySelector('#json').append(json);
 	document.querySelector('#recv').innerHTML = _.template
             (document.querySelector('#recv-template').innerHTML)
-	    ({meta:m.concat(["double"])});
+	    ({meta:m.concat([{path:[],type:"double"}]).map((i) => i.type)});
         document.querySelector('#payload').value = "";
 	document.querySelectorAll('.theTick').forEach((el) => {
           el.innerText = t.toString();

@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Network.Earthquake.Remote
   ( Remote
@@ -25,7 +26,7 @@ import Control.Monad.Trans.State   (State,put,get,evalState)
 import Data.Aeson                  (Value,ToJSON(..),toJSON,fromJSON,FromJSON(..),withObject,(.:), (.=), Result(..))
 import qualified Data.Aeson as A
 import Data.Maybe(isJust)
-import Data.Text(Text, unpack)
+import Data.Text(Text, unpack, pack)
 
 import Prelude hiding (id)
 
@@ -54,6 +55,19 @@ instance ToJSON ResponseType where
   toJSON ResponseDouble = "double"
   toJSON ResponseText = "text"
   toJSON ResponseBool = "bool"
+
+data ResponsePath = ResponsePath [Text] ResponseType
+  deriving (Eq, Ord, Show)
+
+addToResponsePath :: Text -> ResponsePath -> ResponsePath
+addToResponsePath p (ResponsePath ps ty) = ResponsePath (p:ps) ty
+
+instance ToJSON ResponsePath where
+  toJSON (ResponsePath path ty) = A.object
+    [ "path" .= path
+    , "type" .= ty
+    ]
+
 
 class ToResponse msg where
   recv :: Remote msg
@@ -138,11 +152,17 @@ sendRemote' (Array rs) = SendArray <$> sequenceA
 
 -- meta information about types of responses
 -- result starts at id #0, and is consecutive.
-metaRemote :: SendJSON -> [ResponseType]
+metaRemote :: SendJSON -> [ResponsePath]
 metaRemote (SendValue v) = []
-metaRemote (RecvValue i t) = [t]
-metaRemote (SendObject pairs) = concatMap (metaRemote . snd) pairs
-metaRemote (SendArray rs) = concatMap metaRemote rs
+metaRemote (RecvValue i t) = [ResponsePath [] t]
+metaRemote (SendObject pairs) = concat
+  [ addToResponsePath p <$> metaRemote v
+  | (p,v) <- pairs 
+  ]
+metaRemote (SendArray rs) = concat
+  [ addToResponsePath (pack $ show i) <$> metaRemote v
+  | (i::Int,v) <- [0..] `zip` rs
+  ]
 
 ------------------------------------------------------------------------------
 -- Response
