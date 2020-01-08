@@ -112,9 +112,11 @@
                return "\"" + p2 + "\": " + p4 + p5 + " " + button.trim()
 					     .replace(/>\s+</g,"><");
             })
-            .replace(/"path"\: \[([^\[\]\{\}]*)\]/g,
-		(match,p1) => 
-                     "\"path\": [" + p1.trim().replace(/,\s*"/g,",\"") + "]")
+            .replace(/"path"\: \[([^\[\]\{\}]*)\],\s+\"type": "([^\"]*)"\s+}/g,
+		(match,p1,p2) => 
+		     "\"type\": \"" + p2 + "\", " + 
+                     "\"path\": [" + p1.trim().replace(/,\s*"/g,",\"") + 
+                     "] }")
 	document.querySelector('#json').innerHTML = json;
       }
       // Add an event listener that runs down the
