@@ -6,6 +6,37 @@
     <title>Template • Earthquake</title>
   </head>
   <body>
+    <script type="text/template" id="button-template">
+      <%  let button = type;
+          if (type == "bool") button = "false";
+	  let value = undefined;
+	  switch (type) {
+	  case "bool": value = "false"; break;
+	  case "unit": value = "()"; break;
+	  case "text": value = ""; break;
+	  case "double": value = "NaN"; break;
+          }
+       %>
+       <% if (type == "text") { %>
+	  <input type="text"
+		 class="text-button"
+		 value="<%=value%>"
+		 earthquake-id="<%=id%>"
+	      <%= type=="double"?"disabled":""%>></input>
+       <% } else { %>
+	  <input type="button"
+		 class="<%=button%>-button"
+		 value="<%=value%>"
+		 earthquake-id="<%=id%>"
+	      <%= type=="double"?"disabled":""%>></input>
+       <% } %>
+       <% if (type == "bool") { %>
+	  <input type="button"
+		 class="true-button"
+		 value="true"
+		 earthquake-id="<%=id%>"></input>
+       <% } %>
+    </script>
     <script type="text/template" id="recv-template">
       <% _.each(meta, (i, ix) => { 
         let button = i;
@@ -39,30 +70,9 @@
       </tr>
       <% }) %>
     </script>
-    <fieldset>
-      <legend>Earthquake Debugging Mode</legend>
-      <table width="100%">
-	<tr>
-	  <td width="50%" valign="top">
-	    <fieldset>
-	    <legend>Payload</legend>
-	    <input id="payload" type="text" value="" style="width:100%" autofocus></input>
-	    </fieldset>
-	    <table id="recv">
-	    </table>
-	  </td>
-	  <td width="50%" valign="top">
-	    <fieldset>
-	    <legend>View</legend>
-	      Tick: <span class="theTick">undefined</span>
-	    </fieldset>
-	    <textarea readonly style="white-space: pre-wrap; width: 100%; height: 80vh"  id="json">
-	    </textarea>
-	  </td>
-	</tr>
-      </table>
-    </fieldset>
-    <div id="target"></div>
+
+    <code><pre id="json"></pre></code>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js"></script>
     <script>
       window.jsb = {ws: new WebSocket('ws://' + location.host + '/')};
@@ -71,17 +81,39 @@
       jsb.tick = 0;
       jsb.render = (t,o,m) => {
         console.log(t,o,m);
-        let json = JSON.stringify(o,null,2)
-	    .replace(/(?<!:\s*){\s*"/g,"{ \"");
+	m.forEach((i) => {
+           let j = o; let prev_j = null; let prev_p = null;
+           i.path.forEach((p) => {
+             console.log("loop",p,j,j[p])
+             prev_j = j;
+             prev_p = p;
+             j = j[p];
+           })
+           prev_j["#" + prev_p] = {id:j,type:i.type};
+           delete prev_j[prev_p];
+           console.log("done",i,j,prev_p,prev_j);
+        })				  
+        let modifier = (k,v) => {
+           if (k.charAt(0) == '#') {
+             return v.type + "#" + v.id;
+           } else {
+             return v;
+           }
+        };
+        let re = /(?<!(:\s*|\\))"\#([^"]*)": "(\S+)#(\d+)"(,?)/g;
+        let xx = /"/g;  // to fix syntax highlighting
+        let json = JSON.stringify(o,modifier,2)
+	    .replace(/(?<!:\s*){\s*"/g,"{ \"")
+            .replace(re,(match,p1,p2,p3,p4,p5) => {
+     	       let button = _.template
+                  (document.querySelector('#button-template').innerHTML)
+                  ({id:p4,type:p3});
+	       console.log("Hello", button,typeof(button),p4 + button);	
+               return "\"" + p2 + "\": " + p4 + p5 + " " + button.trim()
+					     .replace(/>\s+</g,"><");
+            });
 	document.querySelector('#json').innerHTML = "";
-	document.querySelector('#json').append(json);
-	document.querySelector('#recv').innerHTML = _.template
-            (document.querySelector('#recv-template').innerHTML)
-	    ({meta:m.concat([{path:[],type:"double"}]).map((i) => i.type)});
-        document.querySelector('#payload').value = "";
-	document.querySelectorAll('.theTick').forEach((el) => {
-          el.innerText = t.toString();
-        })
+	document.querySelector('#json').innerHTML = json;
       }
       jsb.send = (id,value,tick) => {
         console.log("send",id,value,tick);
@@ -90,7 +122,7 @@
         jsb.event({id:id,value:value,tick:jsb.tick})
         // In the debugger (only), reset the payload once a value is sent
         document.querySelector('#payload').value = "";
-        document.querySelector('#payload').focus();
+//        document.querySelector('#payload').focus();
       }
       // Add an event listener that runs down the
       // target's path, to find the first selector match.
@@ -106,41 +138,30 @@
 	    }, false)
       }
       jsb.on("click",".unit-button",(e,el) => {
-        jsb.send(parseInt(el.value.split(/#/)[1]));
+        jsb.event(
+          {id:parseInt(el.getAttribute('earthquake-id')),
+           value:[],
+   	   tick:jsb.tick});
       })
       jsb.on("click",".true-button",(e,el) => {
-        jsb.send(parseInt(el.value.split(/#/)[1]),true);
+        jsb.event(
+          {id:parseInt(el.getAttribute('earthquake-id')),
+           value:true,
+   	   tick:jsb.tick});
       })
       jsb.on("click",".false-button",(e,el) => {
-           jsb.send(parseInt(el.value.split(/#/)[1]),false);
+        jsb.event(
+          {id:parseInt(el.getAttribute('earthquake-id')),
+           value:false,
+   	   tick:jsb.tick});
       })
-      jsb.on("click",".text-button",(e,el) => {
-           jsb.send(parseInt(el.value.split(/#/)[1]),
-                   document.querySelector('#payload').value)
-      })
-      jsb.on("click",".double-button",(e,el) => {
-           jsb.send(parseInt(el.value.split(/#/)[1]),
-                   parseFloat(document.querySelector('#payload').value))
-      })
-      jsb.on("input","#payload",(e) => {
-          console.log("keypress",e.code);
-          let text = document.querySelector('#payload').value;
-          let f = parseFloat(text);
-          document
-            .querySelectorAll('.theText')
-            .forEach((o) => { 
-               o.innerText = JSON.stringify(text);
-            });
-          document
-            .querySelectorAll('.theDouble')
-            .forEach((o) => { 
-               o.innerText = f.toString();
-            });
-          document
-            .querySelectorAll('.double-button')
-            .forEach((o) => { 
-               o.disabled = isNaN(f);
-            });
+      jsb.on("keypress",".text-button",(e,el) => {
+           if (e.keyCode == 13) {
+             jsb.event(
+               {id:parseInt(el.getAttribute('earthquake-id')),
+                value:el.value,
+		tick:jsb.tick});
+           }
       })
     </script>
   </body>
