@@ -102,7 +102,7 @@
         };
         let re = /(\n|{)(\s*)"\#([^"]*)": "(\S+)#(\d+)"(,?)/g;
         let json = JSON.stringify({tick:t,view:o,meta:m},modifier,2)
-	    .replace(/([^:]\s*){\s*"/g,"$1{ \"")
+	    .replace(/^(\s*){\s*"/gm,"$1{ \"")
             .replace(re,(match,p0,p1,p2,p3,p4,p5) => {
      	       let button = _.template
                   (document.querySelector('#button-template').innerHTML)
