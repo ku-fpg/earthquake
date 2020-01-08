@@ -100,16 +100,15 @@
              return v;
            }
         };
-        let re = /(?<!(:\s*|\\))"\#([^"]*)": "(\S+)#(\d+)"(,?)/g;
-        let xx = /"/g;  // to fix syntax highlighting
+        let re = /(\n|{)(\s*)"\#([^"]*)": "(\S+)#(\d+)"(,?)/g;
         let json = JSON.stringify({tick:t,view:o,meta:m},modifier,2)
-	    .replace(/(?<!:\s*){\s*"/g,"{ \"")
-            .replace(re,(match,p1,p2,p3,p4,p5) => {
+	    .replace(/([^:]\s*){\s*"/g,"$1{ \"")
+            .replace(re,(match,p0,p1,p2,p3,p4,p5) => {
      	       let button = _.template
                   (document.querySelector('#button-template').innerHTML)
                   ({id:p4,type:p3});
-	       console.log("Hello", button,typeof(button),p4 + button);	
-               return "\"" + p2 + "\": " + p4 + p5 + " " + button.trim()
+               return p0 + p1 + 
+                      "\"" + p2 + "\": " + p4 + p5 + " " + button.trim()
 					     .replace(/>\s+</g,"><");
             })
             .replace(/"path"\: \[([^\[\]\{\}]*)\],\s+\"type": "([^\"]*)"\s+}/g,
@@ -125,9 +124,7 @@
 	  document
 	    .querySelector('body')
 	    .addEventListener(eventName,(e) => {
-		let el = _.find(e.path,(i) =>
-				typeof(i.matches) == "function" &&
-				i.matches(selector));
+		let el = e.target.closest(selector);
 		// We bind this to the element, aka jquery.
 		el && callback.call(el,e,el);
 	    }, false)
@@ -151,6 +148,7 @@
    	   tick:jsb.tick});
       })
       jsb.on("keypress",".text-button",(e,el) => {
+				      console.log(e);
            if (e.keyCode == 13) {
              jsb.event(
                {id:parseInt(el.getAttribute('earthquake-id')),
