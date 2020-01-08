@@ -102,7 +102,7 @@
         };
         let re = /(?<!(:\s*|\\))"\#([^"]*)": "(\S+)#(\d+)"(,?)/g;
         let xx = /"/g;  // to fix syntax highlighting
-        let json = JSON.stringify(o,modifier,2)
+        let json = JSON.stringify({tick:t,view:o,meta:m},modifier,2)
 	    .replace(/(?<!:\s*){\s*"/g,"{ \"")
             .replace(re,(match,p1,p2,p3,p4,p5) => {
      	       let button = _.template
@@ -111,18 +111,11 @@
 	       console.log("Hello", button,typeof(button),p4 + button);	
                return "\"" + p2 + "\": " + p4 + p5 + " " + button.trim()
 					     .replace(/>\s+</g,"><");
-            });
-	document.querySelector('#json').innerHTML = "";
+            })
+            .replace(/"path"\: \[([^\[\]\{\}]*)\]/g,
+		(match,p1) => 
+                     "\"path\": [" + p1.trim().replace(/,\s*"/g,",\"") + "]")
 	document.querySelector('#json').innerHTML = json;
-      }
-      jsb.send = (id,value,tick) => {
-        console.log("send",id,value,tick);
-        value = value == undefined ? [] : value;
-        tick = tick || jsb.tick;
-        jsb.event({id:id,value:value,tick:jsb.tick})
-        // In the debugger (only), reset the payload once a value is sent
-        document.querySelector('#payload').value = "";
-//        document.querySelector('#payload').focus();
       }
       // Add an event listener that runs down the
       // target's path, to find the first selector match.
@@ -163,6 +156,7 @@
 		tick:jsb.tick});
            }
       })
+      // TODO: numbers
     </script>
   </body>
 </html>
